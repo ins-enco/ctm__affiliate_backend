@@ -1,0 +1,6 @@
+@CopyTradeMarketApi.Host_HostAddress = http://localhost:5115
+
+GET {{CopyTradeMarketApi.Host_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
