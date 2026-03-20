@@ -13,7 +13,6 @@ logs/
 ## Secrets
 appsettings.*.json
 !appsettings.json
-!appsettings.Development.json
 
 ## NuGet
 *.nupkg
