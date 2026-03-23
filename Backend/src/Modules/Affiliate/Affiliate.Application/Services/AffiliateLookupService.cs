@@ -18,13 +18,23 @@ public class AffiliateLookupService(AffiliateDbContext db) : IAffiliateLookupSer
 
     public async Task<int?> GetAffiliateIdByUserIdAsync(int userId)
     {
-        var affiliate = await db.Affiliates.FirstOrDefaultAsync(a => a.UserId == userId);
+        var affiliate = await db.Affiliates
+            .FirstOrDefaultAsync(new AffiliateByUserIdSpecification(userId).ToExpression());
         return affiliate?.Id;
     }
 
     public async Task<(int affiliateId, string uniqueCode)?> FindByCodeAsync(string affiliateCode)
     {
-        var affiliate = await db.Affiliates.FirstOrDefaultAsync(a => a.UniqueCode == affiliateCode);
+        var affiliate = await db.Affiliates
+            .FirstOrDefaultAsync(new AffiliateByCodeSpecification(affiliateCode).ToExpression());
+        if (affiliate is null) return null;
+        return (affiliate.Id, affiliate.UniqueCode);
+    }
+
+    public async Task<(int affiliateId, string uniqueCode)?> FindByIdAsync(int affiliateId)
+    {
+        var affiliate = await db.Affiliates
+            .FirstOrDefaultAsync(new AffiliateByIdSpecification(affiliateId).ToExpression());
         if (affiliate is null) return null;
         return (affiliate.Id, affiliate.UniqueCode);
     }
@@ -38,7 +48,7 @@ public class AffiliateLookupService(AffiliateDbContext db) : IAffiliateLookupSer
                 .Select(_ => chars[Random.Shared.Next(chars.Length)])
                 .ToArray());
 
-            if (!await db.Affiliates.AnyAsync(a => a.UniqueCode == code))
+            if (!await db.Affiliates.AnyAsync(new AffiliateByCodeSpecification(code).ToExpression()))
                 return code;
         }
     }

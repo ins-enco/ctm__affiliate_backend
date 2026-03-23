@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Tracking.Application.DTOs;
 using Tracking.Application.Services;
+using CopyTradeMarketApi.Shared.Exceptions;
 
 namespace Tracking.API.Controllers;
 
@@ -38,5 +39,15 @@ public class TrackingController(ITrackingService trackingService, IConfiguration
         }
 
         return Ok(result);
+    }
+
+    [HttpPost("convert")]
+    [ProducesResponseType(typeof(ConversionResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Convert([FromBody] ConversionRequest request)
+    {
+        var result = await trackingService.RecordConversionAsync(request);
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 }
