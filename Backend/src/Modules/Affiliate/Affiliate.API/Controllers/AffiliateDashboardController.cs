@@ -1,8 +1,3 @@
-using Affiliate.Application.DTOs;
-using Affiliate.Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
 namespace Affiliate.API.Controllers;
 
 [ApiController]

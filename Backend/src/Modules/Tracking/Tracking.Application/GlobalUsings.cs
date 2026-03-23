@@ -7,3 +7,5 @@ global using Tracking.Domain.Entities;
 global using Tracking.Domain.Specifications;
 global using Tracking.Infrastructure.Persistence;
 global using Tracking.Application.DTOs;
+global using CopyTradeMarketApi.Shared.Events;
+global using Tracking.Application.Services;

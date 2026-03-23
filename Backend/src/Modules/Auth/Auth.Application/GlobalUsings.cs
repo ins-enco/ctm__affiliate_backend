@@ -10,3 +10,4 @@ global using Microsoft.IdentityModel.Tokens;
 global using Auth.Application.DTOs;
 global using Auth.Application.Settings;
 global using CopyTradeMarketApi.Shared.Events;
+global using Auth.Domain.Specifications;

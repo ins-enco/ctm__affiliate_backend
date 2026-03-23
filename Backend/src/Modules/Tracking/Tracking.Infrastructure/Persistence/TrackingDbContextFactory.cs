@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Tracking.Infrastructure.Persistence;
 
 public class TrackingDbContextFactory : IDesignTimeDbContextFactory<TrackingDbContext>

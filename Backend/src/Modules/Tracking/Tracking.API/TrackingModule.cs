@@ -1,8 +1,3 @@
-using CopyTradeMarketApi.Shared.Abstractions;
-using CopyTradeMarketApi.Shared.Events;
-using Tracking.Application.EventHandlers;
-using Tracking.Application.Services;
-
 namespace Tracking.API;
 
 public class TrackingModule : IModule

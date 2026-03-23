@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Tracking.Application.DTOs;
-using Tracking.Application.Services;
-using CopyTradeMarketApi.Shared.Exceptions;
-
 namespace Tracking.API.Controllers;
 
 [ApiController]

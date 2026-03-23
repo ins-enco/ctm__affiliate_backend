@@ -1,5 +1,3 @@
-using Affiliate.Application.DTOs;
-
 namespace Affiliate.Application.Services;
 
 public class AffiliateDashboardService(

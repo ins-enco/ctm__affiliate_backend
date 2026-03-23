@@ -4,3 +4,5 @@ global using Affiliate.Domain.Specifications;
 global using CopyTradeMarketApi.Shared.Abstractions;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Caching.Memory;
+global using Affiliate.Application.DTOs;
+

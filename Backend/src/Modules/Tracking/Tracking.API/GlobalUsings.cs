@@ -5,3 +5,8 @@ global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using Tracking.Infrastructure.Persistence;
+global using Microsoft.AspNetCore.Mvc;
+global using Tracking.Application.DTOs;
+global using Tracking.Application.Services;
+global using CopyTradeMarketApi.Shared.Events;
+global using Tracking.Application.EventHandlers;

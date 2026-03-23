@@ -8,7 +8,7 @@ public class AuthService(
 {
     public async Task<AuthResult> RegisterAsync(RegisterRequest request)
     {
-        if (await db.Users.AnyAsync(u => u.Email == request.Email))
+        if (await db.Users.Apply(new UserByEmailSpecification(request.Email)).AnyAsync())
             throw new ConflictException("Email already registered.");
 
         var user = new User
@@ -28,7 +28,7 @@ public class AuthService(
 
     public async Task<AuthResult> LoginAsync(LoginRequest request)
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email)
+        var user = await db.Users.Apply(new UserByEmailSpecification(request.Email)).FirstOrDefaultAsync()
             ?? throw new UnauthorizedAccessException("Invalid credentials.");
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))

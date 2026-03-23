@@ -1,5 +1,3 @@
-using Affiliate.Application.Services;
-
 namespace Affiliate.API;
 
 public class AffiliateModule : IModule

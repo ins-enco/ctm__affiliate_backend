@@ -1,8 +1,3 @@
-using CopyTradeMarketApi.Shared.Abstractions;
-using CopyTradeMarketApi.Shared.Events;
-using Tracking.Application.DTOs;
-using Tracking.Application.Services;
-
 namespace Tracking.Application.EventHandlers;
 
 public class UserRegisteredEventHandler(ITrackingService trackingService) : IEventHandler<UserRegisteredEvent>
