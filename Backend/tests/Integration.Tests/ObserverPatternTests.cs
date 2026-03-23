@@ -77,6 +77,12 @@ public class ObserverPatternTests : IClassFixture<IntegrationWebFactory>
     {
         var client = _factory.CreateClient();
 
+        // ── Snapshot conversion count before registering ─────────────────────
+        using var scopeBefore = _factory.Services.CreateScope();
+        var countBefore = await scopeBefore.ServiceProvider
+            .GetRequiredService<TrackingDbContext>()
+            .ConversionEvents.CountAsync();
+
         // ── Register (no cookie) ──────────────────────────────────────────────
         var registerResp = await client.PostAsJsonAsync("/api/auth/register", new
         {
@@ -86,14 +92,13 @@ public class ObserverPatternTests : IClassFixture<IntegrationWebFactory>
         });
         Assert.Equal(HttpStatusCode.Created, registerResp.StatusCode);
 
-        // ── Verify no conversion was created ──────────────────────────────────
-        using var scope = _factory.Services.CreateScope();
-        var trackingDb = scope.ServiceProvider.GetRequiredService<TrackingDbContext>();
+        // ── Verify count did not increase ─────────────────────────────────────
+        using var scopeAfter = _factory.Services.CreateScope();
+        var countAfter = await scopeAfter.ServiceProvider
+            .GetRequiredService<TrackingDbContext>()
+            .ConversionEvents.CountAsync();
 
-        var count = await trackingDb.ConversionEvents
-            .CountAsync(e => e.ConversionType == "Registration");
-
-        Assert.Equal(0, count);
+        Assert.Equal(countBefore, countAfter);
     }
 
     private static string? ExtractSessionIdFromCookie(string setCookieHeader)
