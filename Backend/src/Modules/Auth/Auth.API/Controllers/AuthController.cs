@@ -2,14 +2,17 @@ namespace Auth.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IAuthService authService) : ControllerBase
+public class AuthController(IAuthService authService, IConfiguration configuration) : ControllerBase
 {
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResult), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var result = await authService.RegisterAsync(request);
+        var cookieName = configuration["ClickTracking:CookieName"] ?? "aff_sid";
+        Request.Cookies.TryGetValue(cookieName, out var sessionId);
+
+        var result = await authService.RegisterAsync(request with { SessionId = sessionId });
         return StatusCode(StatusCodes.Status201Created, result);
     }
 

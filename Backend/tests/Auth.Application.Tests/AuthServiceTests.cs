@@ -15,6 +15,9 @@ public class AuthServiceTests
         SecretKey = "super-secret-key-for-testing-1234567890"
     };
 
+    private static IEventPublisher CreateEventPublisher() =>
+        new Mock<IEventPublisher>().Object;
+
     // ── Register ──────────────────────────────────────────────────────────────
 
     [Fact]
@@ -26,7 +29,7 @@ public class AuthServiceTests
         mockLookup.Setup(l => l.CreateAffiliateAsync(It.IsAny<int>(), It.IsAny<string>()))
                   .ReturnsAsync((99, "CODE0001"));
 
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
 
         // Act
         var result = await service.RegisterAsync(new RegisterRequest("Alice", "alice@test.com", "Password1!"));
@@ -46,7 +49,7 @@ public class AuthServiceTests
         mockLookup.Setup(l => l.CreateAffiliateAsync(It.IsAny<int>(), It.IsAny<string>()))
                   .ReturnsAsync((1, "CODE0001"));
 
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
         await service.RegisterAsync(new RegisterRequest("Alice", "alice@test.com", "Password1!"));
 
         // Act & Assert
@@ -67,7 +70,7 @@ public class AuthServiceTests
         mockLookup.Setup(l => l.GetAffiliateIdByUserIdAsync(It.IsAny<int>()))
                   .ReturnsAsync(5);
 
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
         await service.RegisterAsync(new RegisterRequest("Bob", "bob@test.com", "MyPass123!"));
 
         // Act
@@ -84,7 +87,7 @@ public class AuthServiceTests
         // Arrange
         var db = CreateDbContext();
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
@@ -100,7 +103,7 @@ public class AuthServiceTests
         mockLookup.Setup(l => l.CreateAffiliateAsync(It.IsAny<int>(), It.IsAny<string>()))
                   .ReturnsAsync((1, "CODE0001"));
 
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
         await service.RegisterAsync(new RegisterRequest("Carol", "carol@test.com", "RightPass!"));
 
         // Act & Assert
@@ -120,7 +123,7 @@ public class AuthServiceTests
         mockLookup.Setup(l => l.GetAffiliateIdByUserIdAsync(It.IsAny<int>()))
                   .ReturnsAsync((int?)null);
 
-        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings());
+        var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
         await service.RegisterAsync(new RegisterRequest("Dave", "dave@test.com", "Pass123!"));
 
         // Act & Assert

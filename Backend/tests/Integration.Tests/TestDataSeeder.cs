@@ -1,10 +1,4 @@
-using Affiliate.Infrastructure.Persistence;
-using Auth.Domain.Entities;
-using Auth.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using Tracking.Domain.Entities;
-using Tracking.Infrastructure.Persistence;
-using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;
 
 namespace Integration.Tests;
 

@@ -86,20 +86,18 @@ public static class DevDataSeeder
     {
         var now = DateTime.UtcNow;
 
-        // Alice (Id=1) — 12 clicks (10 unique), 3 conversions
+        // Alice (Id=1) — 10 clicks (10 unique), 3 conversions
         db.ClickEvents.AddRange(
-            Click(1, "SES-A1", unique: true,  days: -1),
-            Click(1, "SES-A2", unique: true,  days: -2),
-            Click(1, "SES-A3", unique: true,  days: -3),
-            Click(1, "SES-A4", unique: true,  days: -4),
-            Click(1, "SES-A5", unique: true,  days: -5),
-            Click(1, "SES-A6", unique: true,  days: -6),
-            Click(1, "SES-A7", unique: true,  days: -9),
-            Click(1, "SES-A8", unique: true,  days: -12),
-            Click(1, "SES-A9", unique: true,  days: -20),
-            Click(1, "SES-AA", unique: true,  days: -30),
-            Click(1, "SES-A1", unique: false, days: -1),  // repeat visit
-            Click(1, "SES-A2", unique: false, days: -2)   // repeat visit
+            Click(1, "SES-A1", unique: true, days: -1),
+            Click(1, "SES-A2", unique: true, days: -2),
+            Click(1, "SES-A3", unique: true, days: -3),
+            Click(1, "SES-A4", unique: true, days: -4),
+            Click(1, "SES-A5", unique: true, days: -5),
+            Click(1, "SES-A6", unique: true, days: -6),
+            Click(1, "SES-A7", unique: true, days: -9),
+            Click(1, "SES-A8", unique: true, days: -12),
+            Click(1, "SES-A9", unique: true, days: -20),
+            Click(1, "SES-AA", unique: true, days: -30)
         );
         db.ConversionEvents.AddRange(
             Conversion(1, "SES-A1", type: "Registration", days: -1),
@@ -120,7 +118,7 @@ public static class DevDataSeeder
         await db.SaveChangesAsync();
 
         logger.LogInformation(
-            "  Click/conversion history seeded (Alice: 12 clicks, 3 conversions | Bob: 4 clicks | Carol: 0)");
+            "  Click/conversion history seeded (Alice: 10 clicks, 3 conversions | Bob: 4 clicks | Carol: 0)");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

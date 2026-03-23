@@ -1,3 +1,6 @@
+using CopyTradeMarketApi.Shared.Abstractions;
+using CopyTradeMarketApi.Shared.Events;
+using Tracking.Application.EventHandlers;
 using Tracking.Application.Services;
 
 namespace Tracking.API;
@@ -14,6 +17,7 @@ public class TrackingModule : IModule
 
         services.AddScoped<ITrackingService, TrackingService>();
         services.AddScoped<IClickStatsReader, ClickStatsReader>();
+        services.AddScoped<IEventHandler<UserRegisteredEvent>, UserRegisteredEventHandler>();
     }
 
     public void MapEndpoints(IApplicationBuilder app) { }

@@ -56,8 +56,7 @@ public class TrackingService(
 
         // Attribute to the affiliate that owns this session's click
         var click = await db.ClickEvents
-            .Apply(new ClickBySessionSpecification(request.SessionId))
-            .OrderByDescending(e => e.ClickedAt)
+            .Apply(new LatestClickBySessionSpecification(request.SessionId))
             .FirstOrDefaultAsync();
 
         string? affiliateCode = null;

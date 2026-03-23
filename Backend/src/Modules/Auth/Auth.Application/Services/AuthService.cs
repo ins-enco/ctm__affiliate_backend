@@ -3,7 +3,8 @@ namespace Auth.Application.Services;
 public class AuthService(
     AuthDbContext db,
     IAffiliateLookupService affiliateLookup,
-    JwtSettings jwtSettings) : IAuthService
+    JwtSettings jwtSettings,
+    IEventPublisher eventPublisher) : IAuthService
 {
     public async Task<AuthResult> RegisterAsync(RegisterRequest request)
     {
@@ -19,6 +20,8 @@ public class AuthService(
         await db.SaveChangesAsync();
 
         var (affiliateId, _) = await affiliateLookup.CreateAffiliateAsync(user.Id, request.Name);
+
+        await eventPublisher.PublishAsync(new UserRegisteredEvent(user.Id, request.SessionId));
 
         return BuildToken(user.Id, affiliateId);
     }

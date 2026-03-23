@@ -21,6 +21,9 @@ var modules = new List<IModule>
 // Step 5 — In-memory cache
 builder.Services.AddMemoryCache();
 
+// Step 5b — Domain event publisher
+builder.Services.AddScoped<IEventPublisher, EventPublisher>();
+
 // Step 6 — Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
