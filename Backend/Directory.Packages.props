@@ -20,5 +20,11 @@
 
     <!-- Security -->
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
+
+    <!-- Swagger -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+
+    <!-- JWT generation -->
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 </Project>

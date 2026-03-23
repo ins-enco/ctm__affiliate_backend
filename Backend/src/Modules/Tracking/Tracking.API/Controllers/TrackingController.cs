@@ -1,0 +1,42 @@
+using Microsoft.AspNetCore.Mvc;
+using Tracking.Application.DTOs;
+using Tracking.Application.Services;
+
+namespace Tracking.API.Controllers;
+
+[ApiController]
+[Route("api/tracking")]
+public class TrackingController(ITrackingService trackingService, IConfiguration configuration) : ControllerBase
+{
+    [HttpGet("click")]
+    [ProducesResponseType(typeof(ClickResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Click([FromQuery] string affiliateCode)
+    {
+        var cookieName = configuration["ClickTracking:CookieName"] ?? "aff_sid";
+        var cookieDays = int.TryParse(configuration["ClickTracking:CookieLifetimeDays"], out var d) ? d : 1;
+
+        Request.Cookies.TryGetValue(cookieName, out var existingSessionId);
+
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        var result = await trackingService.RecordClickAsync(affiliateCode, ipAddress, userAgent, existingSessionId);
+
+        // Set the aff_sid cookie if it's a new session
+        if (existingSessionId is null)
+        {
+            Response.Cookies.Append(cookieName, result.IsUnique
+                ? CopyTradeMarketApi.Shared.Helpers.HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}")
+                : existingSessionId ?? string.Empty,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Expires = DateTimeOffset.UtcNow.AddDays(cookieDays),
+                    SameSite = SameSiteMode.Lax
+                });
+        }
+
+        return Ok(result);
+    }
+}

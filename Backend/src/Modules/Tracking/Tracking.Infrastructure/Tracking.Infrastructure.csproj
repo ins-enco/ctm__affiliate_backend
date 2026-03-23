@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Tracking.Application\Tracking.Application.csproj" />
+    <ProjectReference Include="..\Tracking.Domain\Tracking.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

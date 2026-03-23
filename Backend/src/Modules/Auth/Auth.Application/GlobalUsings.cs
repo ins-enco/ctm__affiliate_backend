@@ -1,0 +1,11 @@
+global using System.IdentityModel.Tokens.Jwt;
+global using System.Security.Claims;
+global using System.Text;
+global using Auth.Domain.Entities;
+global using Auth.Infrastructure.Persistence;
+global using CopyTradeMarketApi.Shared.Abstractions;
+global using CopyTradeMarketApi.Shared.Exceptions;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.IdentityModel.Tokens;
+global using Auth.Application.DTOs;
+global using Auth.Application.Settings;

@@ -21,14 +21,52 @@ var modules = new List<IModule>
 // Step 5 — In-memory cache
 builder.Services.AddMemoryCache();
 
-// Step 6 — JWT authentication
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer();
+// Step 6 — Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new() { Title = "CopyTrade Market API", Version = "v1" });
 
-// Step 7 — Authorization
+    // JWT bearer support in Swagger UI
+    options.AddSecurityDefinition("Bearer", new()
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter your JWT token (without 'Bearer ' prefix)."
+    });
+    options.AddSecurityRequirement(new()
+    {
+        {
+            new() { Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" } },
+            []
+        }
+    });
+});
+
+// Step 7 — JWT authentication
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"]!))
+        };
+    });
+
+// Step 8 — Authorization
 builder.Services.AddAuthorization();
 
-// Step 8 — Register each module's services
+// Step 9 — Register each module's services
 foreach (var module in modules)
     module.RegisterServices(builder.Services, builder.Configuration);
 
@@ -40,13 +78,17 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-// Step 9 — ExceptionHandlingMiddleware must be first
+// Step 10 — ExceptionHandlingMiddleware must be first
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Step 10 — Serilog request logging
+// Step 11 — Swagger (all environments for now)
+app.UseSwagger();
+app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "CopyTrade Market API v1"));
+
+// Step 12 — Serilog request logging
 app.UseSerilogRequestLogging();
 
-// Step 11 — Authentication & Authorization
+// Step 13 — Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

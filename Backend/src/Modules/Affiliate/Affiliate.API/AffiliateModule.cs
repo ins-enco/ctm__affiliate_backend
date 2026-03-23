@@ -1,3 +1,5 @@
+using Affiliate.Application.Services;
+
 namespace Affiliate.API;
 
 public class AffiliateModule : IModule
@@ -9,6 +11,9 @@ public class AffiliateModule : IModule
 
         services.AddDbContext<AffiliateDbContext>(options =>
             options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0))));
+
+        services.AddScoped<IAffiliateLookupService, AffiliateLookupService>();
+        services.AddScoped<IAffiliateDashboardService, AffiliateDashboardService>();
     }
 
     public void MapEndpoints(IApplicationBuilder app) { }

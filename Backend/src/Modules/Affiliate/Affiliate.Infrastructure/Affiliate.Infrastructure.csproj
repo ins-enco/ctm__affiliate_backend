@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Affiliate.Application\Affiliate.Application.csproj" />
+    <ProjectReference Include="..\Affiliate.Domain\Affiliate.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Affiliate.Domain\Affiliate.Domain.csproj" />
+    <ProjectReference Include="..\Affiliate.Infrastructure\Affiliate.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Shared\CopyTradeMarketApi.Shared\CopyTradeMarketApi.Shared.csproj" />
   </ItemGroup>
 
