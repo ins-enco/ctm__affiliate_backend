@@ -100,3 +100,6 @@ foreach (var module in modules)
     module.MapEndpoints(app);
 
 app.Run();
+
+// Expose Program to WebApplicationFactory in integration tests
+public partial class Program { }

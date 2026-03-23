@@ -9,7 +9,7 @@ public class AffiliateDashboardService(
 {
     public async Task<DashboardResult> GetDashboardAsync(int affiliateId)
     {
-        var affiliate = await db.Affiliates.FirstOrDefaultAsync(a => a.Id == affiliateId)
+        var affiliate = await db.Affiliates.Apply(new AffiliateByIdSpecification(affiliateId)).FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException("Affiliate not found.");
 
         var stats = await clickStatsReader.GetAsync(affiliateId);
