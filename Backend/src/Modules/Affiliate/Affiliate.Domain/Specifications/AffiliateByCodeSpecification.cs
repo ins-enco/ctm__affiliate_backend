@@ -1,7 +1,3 @@
 namespace Affiliate.Domain.Specifications;
 
-public class AffiliateByCodeSpecification(string uniqueCode) : ISpecification<AffiliateEntity>
-{
-    public Expression<Func<AffiliateEntity, bool>> ToExpression()
-        => a => a.UniqueCode == uniqueCode;
-}
+public class AffiliateByCodeSpecification(string uniqueCode) : BaseSpecification<AffiliateEntity>(a => a.UniqueCode == uniqueCode);

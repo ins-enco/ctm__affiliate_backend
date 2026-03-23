@@ -18,7 +18,8 @@ public class TrackingService(
             ?? HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}");
 
         var alreadyExists = await db.ClickEvents
-            .AnyAsync(new UniqueClickSpecification(affiliateId, sessionId).ToExpression());
+            .Apply(new UniqueClickSpecification(affiliateId, sessionId))
+            .AnyAsync();
 
         if (alreadyExists)
             return new ClickResult(false, affiliateCode, "Click already recorded for this session.");
@@ -47,14 +48,15 @@ public class TrackingService(
             throw new InvalidOperationException($"Invalid conversion type '{request.ConversionType}'. Must be Registration or Deposit.");
 
         var alreadyConverted = await db.ConversionEvents
-            .AnyAsync(new UniqueConversionSpecification(request.SessionId, request.ConversionType).ToExpression());
+            .Apply(new UniqueConversionSpecification(request.SessionId, request.ConversionType))
+            .AnyAsync();
 
         if (alreadyConverted)
             throw new ConflictException($"A {request.ConversionType} conversion has already been recorded for this session.");
 
         // Attribute to the affiliate that owns this session's click
         var click = await db.ClickEvents
-            .Where(new ClickBySessionSpecification(request.SessionId).ToExpression())
+            .Apply(new ClickBySessionSpecification(request.SessionId))
             .OrderByDescending(e => e.ClickedAt)
             .FirstOrDefaultAsync();
 
