@@ -6,4 +6,5 @@ public record DashboardResult(
     int TotalClicks,
     int UniqueClicks,
     int Last7DayClicks,
+    int ConvertedClicks,
     int CachedClickCount);

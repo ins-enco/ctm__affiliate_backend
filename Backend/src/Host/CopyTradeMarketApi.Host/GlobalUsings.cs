@@ -1,4 +1,5 @@
 global using Auth.API;
+global using Microsoft.EntityFrameworkCore;
 global using Affiliate.API;
 global using CopyTradeMarketApi.Host;
 global using CopyTradeMarketApi.Host.Middleware;

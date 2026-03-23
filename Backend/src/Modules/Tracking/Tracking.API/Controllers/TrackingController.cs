@@ -2,7 +2,7 @@ namespace Tracking.API.Controllers;
 
 [ApiController]
 [Route("api/tracking")]
-public class TrackingController(ITrackingService trackingService, IConfiguration configuration) : ControllerBase
+public class TrackingController(ITrackingService trackingService, IConfiguration configuration, IWebHostEnvironment env) : ControllerBase
 {
     [HttpGet("click")]
     [ProducesResponseType(typeof(ClickResult), StatusCodes.Status200OK)]
@@ -27,7 +27,7 @@ public class TrackingController(ITrackingService trackingService, IConfiguration
                 : existingSessionId ?? string.Empty,
                 new CookieOptions
                 {
-                    HttpOnly = true,
+                    HttpOnly = !env.IsDevelopment(),
                     Expires = DateTimeOffset.UtcNow.AddDays(cookieDays),
                     SameSite = SameSiteMode.Lax
                 });

@@ -25,6 +25,7 @@ public class AffiliateDashboardService(
             stats.TotalClicks,
             stats.UniqueClicks,
             stats.Last7DayClicks,
+            stats.ConvertedClicks,
             cachedCount);
     }
 }

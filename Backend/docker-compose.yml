@@ -1,0 +1,43 @@
+services:
+
+  # ── MySQL ──────────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Nam781999@
+      MYSQL_DATABASE: copytrade_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pNam781999@"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  api:
+    build: .
+    ports:
+      - "5115:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=copytrade_db;User=root;Password=Nam781999@;"
+      JwtSettings__SecretKey: "OxIjFnF2skOtotoSk3Ra3yvQt/5ZJSqIPX1a/NVUsBM="
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── React Frontend ─────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: "../Mock FrontEnd"
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  mysql_data:

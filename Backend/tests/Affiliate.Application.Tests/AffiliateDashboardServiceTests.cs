@@ -28,7 +28,7 @@ public class AffiliateDashboardServiceTests
 
         var mockReader = new Mock<IClickStatsReader>();
         mockReader.Setup(r => r.GetAsync(1))
-                  .ReturnsAsync(new ClickStats(50, 30, 10));
+                  .ReturnsAsync(new ClickStats(50, 30, 10, 5));
 
         var service = new AffiliateDashboardService(db, mockReader.Object, CreateCache());
 

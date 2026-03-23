@@ -1,0 +1,9 @@
+**/bin
+**/obj
+**/.vs
+**/.git
+**/Logs
+**/logs
+*.user
+tests/
+frontend/

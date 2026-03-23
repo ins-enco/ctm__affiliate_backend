@@ -69,6 +69,22 @@ builder.Services.AddAuthentication("Bearer")
 // Step 8 — Authorization
 builder.Services.AddAuthorization();
 
+// Step 8b — CORS (allows the React frontend at localhost:3000 / Vite dev at 5173)
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins("http://localhost:3000", "http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+
+// Step 8b — CORS (allows the test frontend at localhost:3000)
+builder.Services.AddCors(options =>
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins("http://localhost:3000", "http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()));
+
 // Step 9 — Register each module's services
 foreach (var module in modules)
     module.RegisterServices(builder.Services, builder.Configuration);
@@ -81,12 +97,22 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-// Step 10 — Seed dev data (Development only)
+// Step 10a — Auto-migrate all module databases (idempotent, safe on every startup)
+using (var scope = app.Services.CreateScope())
+{
+    var sp = scope.ServiceProvider;
+    await sp.GetRequiredService<AuthDbContext>().Database.MigrateAsync();
+    await sp.GetRequiredService<AffiliateDbContext>().Database.MigrateAsync();
+    await sp.GetRequiredService<TrackingDbContext>().Database.MigrateAsync();
+}
+
+// Step 10b — Seed dev data (Development only)
 if (app.Environment.IsDevelopment())
     await DevDataSeeder.SeedAsync(app.Services, app.Logger);
 
 // Step 11 — ExceptionHandlingMiddleware must be first
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseCors();
 
 // Step 12 — Swagger (all environments for now)
 app.UseSwagger();
