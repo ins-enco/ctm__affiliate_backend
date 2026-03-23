@@ -1,12 +1,3 @@
-using Xunit;
-using Affiliate.Application.Services;
-using Affiliate.Infrastructure.Persistence;
-using CopyTradeMarketApi.Shared.Abstractions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using Moq;
-using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;
-
 namespace Affiliate.Application.Tests;
 
 public class AffiliateDashboardServiceTests

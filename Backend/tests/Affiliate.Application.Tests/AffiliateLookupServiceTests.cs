@@ -1,9 +1,3 @@
-using Xunit;
-using Affiliate.Application.Services;
-using Affiliate.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
-using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;
-
 namespace Affiliate.Application.Tests;
 
 public class AffiliateLookupServiceTests

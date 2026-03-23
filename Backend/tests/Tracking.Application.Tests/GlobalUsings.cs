@@ -1,0 +1,10 @@
+global using Xunit;
+global using Microsoft.EntityFrameworkCore;
+global using Tracking.Application.Services;
+global using Tracking.Domain.Entities;
+global using Tracking.Infrastructure.Persistence;
+global using CopyTradeMarketApi.Shared.Abstractions;
+global using CopyTradeMarketApi.Shared.Exceptions;
+global using Microsoft.Extensions.Caching.Memory;
+global using Moq;
+global using Tracking.Application.DTOs;

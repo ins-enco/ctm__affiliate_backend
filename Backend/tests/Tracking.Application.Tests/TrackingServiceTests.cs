@@ -1,14 +1,3 @@
-using Xunit;
-using CopyTradeMarketApi.Shared.Abstractions;
-using CopyTradeMarketApi.Shared.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using Moq;
-using Tracking.Application.DTOs;
-using Tracking.Application.Services;
-using Tracking.Domain.Entities;
-using Tracking.Infrastructure.Persistence;
-
 namespace Tracking.Application.Tests;
 
 public class TrackingServiceTests

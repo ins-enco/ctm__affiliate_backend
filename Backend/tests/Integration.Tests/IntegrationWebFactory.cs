@@ -1,17 +1,3 @@
-using System.Text;
-using Auth.Application.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.IdentityModel.Tokens;
-using Affiliate.Infrastructure.Persistence;
-using Auth.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Tracking.Infrastructure.Persistence;
-
 namespace Integration.Tests;
 
 /// <summary>

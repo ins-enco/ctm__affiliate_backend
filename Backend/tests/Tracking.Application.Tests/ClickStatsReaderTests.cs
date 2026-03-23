@@ -1,9 +1,3 @@
-using Xunit;
-using Microsoft.EntityFrameworkCore;
-using Tracking.Application.Services;
-using Tracking.Domain.Entities;
-using Tracking.Infrastructure.Persistence;
-
 namespace Tracking.Application.Tests;
 
 public class ClickStatsReaderTests

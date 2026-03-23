@@ -1,13 +1,3 @@
-using Xunit;
-using Auth.Application.DTOs;
-using Auth.Application.Services;
-using Auth.Application.Settings;
-using Auth.Infrastructure.Persistence;
-using CopyTradeMarketApi.Shared.Abstractions;
-using CopyTradeMarketApi.Shared.Exceptions;
-using Microsoft.EntityFrameworkCore;
-using Moq;
-
 namespace Auth.Application.Tests;
 
 public class AuthServiceTests

@@ -1,11 +1,3 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using Affiliate.Application.DTOs;
-using Auth.Application.DTOs;
-using Microsoft.AspNetCore.Hosting;
-using Xunit;
-
 namespace Integration.Tests;
 
 /// <summary>

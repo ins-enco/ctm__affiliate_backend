@@ -1,8 +1,16 @@
 global using Auth.API;
 global using Affiliate.API;
+global using CopyTradeMarketApi.Host;
 global using CopyTradeMarketApi.Host.Middleware;
 global using CopyTradeMarketApi.Shared.Abstractions;
 global using Serilog;
 global using Tracking.API;
 global using CopyTradeMarketApi.Shared.Exceptions;
 global using Microsoft.AspNetCore.Mvc;
+global using Affiliate.Infrastructure.Persistence;
+global using ILogger = Microsoft.Extensions.Logging.ILogger;
+global using Auth.Domain.Entities;
+global using Auth.Infrastructure.Persistence;
+global using Tracking.Domain.Entities;
+global using Tracking.Infrastructure.Persistence;
+global using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;

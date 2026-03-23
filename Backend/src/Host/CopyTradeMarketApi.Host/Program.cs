@@ -78,10 +78,14 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-// Step 10 — ExceptionHandlingMiddleware must be first
+// Step 10 — Seed dev data (Development only)
+if (app.Environment.IsDevelopment())
+    await DevDataSeeder.SeedAsync(app.Services, app.Logger);
+
+// Step 11 — ExceptionHandlingMiddleware must be first
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Step 11 — Swagger (all environments for now)
+// Step 12 — Swagger (all environments for now)
 app.UseSwagger();
 app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "CopyTrade Market API v1"));
 
