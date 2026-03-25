@@ -2,11 +2,11 @@ import { useState } from 'react'
 import './App.css'
 
 // ── API helper ────────────────────────────────────────────────────────────────
-async function apiFetch(method, path, body, token) {
+async function apiFetch(method, path, body, token, extraHeaders = {}) {
   const opts = {
     method,
     credentials: 'include',   // sends HttpOnly cookies (aff_sid)
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
   }
   if (token) opts.headers['Authorization'] = `Bearer ${token}`
   if (body)  opts.body = JSON.stringify(body)
@@ -75,6 +75,45 @@ const DEV_ACCOUNTS = [
   { email: 'carol@dev.com', info: 'CAROL001 · new account'               },
 ]
 
+// ── Preset click identities ───────────────────────────────────────────────────
+const PRESET_IDENTITIES = [
+  {
+    label: 'Chrome · Windows (US)',
+    ip: '104.18.22.46',
+    ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  },
+  {
+    label: 'Chrome · macOS (EU)',
+    ip: '185.93.182.10',
+    ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  },
+  {
+    label: 'Firefox · Windows (UK)',
+    ip: '81.2.69.144',
+    ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+  },
+  {
+    label: 'Safari · iPhone (AU)',
+    ip: '203.0.113.55',
+    ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  },
+  {
+    label: 'Chrome · Android (SG)',
+    ip: '116.86.4.20',
+    ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.82 Mobile Safari/537.36',
+  },
+  {
+    label: 'Edge · Windows (DE)',
+    ip: '91.198.174.192',
+    ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0',
+  },
+  {
+    label: 'curl / bot (TH)',
+    ip: '171.97.36.12',
+    ua: 'curl/8.7.1',
+  },
+]
+
 const TABS = ['register', 'login', 'dashboard', 'click', 'convert']
 const TAB_LABELS = { register: 'Register', login: 'Login', dashboard: 'Dashboard', click: 'Track Click', convert: 'Convert' }
 
@@ -88,12 +127,14 @@ export default function App() {
   // Form state
   const [regForm,   setReg]   = useState({ name: 'Test User', email: 'test@example.com', password: 'Test123!' })
   const [loginForm, setLogin] = useState({ email: 'alice@dev.com', password: 'DevPass123!' })
-  const [clickCode, setClick] = useState('ALICE001')
+  const [clickCode, setClick]   = useState('ALICE001')
+  const [clickIp,   setClickIp] = useState('')
+  const [clickUa,   setClickUa] = useState('')
   const [convForm,  setConv]  = useState({ sessionId: '', conversionType: 'Registration', userId: '' })
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  const doApi = async (method, path, body) => {
-    const r = await apiFetch(method, path, body, token)
+  const doApi = async (method, path, body, extraHeaders = {}) => {
+    const r = await apiFetch(method, path, body, token, extraHeaders)
     setLog(prev => [{ method, url: path, status: r.status, data: r.data, id: Date.now() }, ...prev])
     return r
   }
@@ -133,7 +174,10 @@ export default function App() {
   }
 
   const recordClick = async () => {
-    await doApi('GET', `/api/tracking/click?affiliateCode=${encodeURIComponent(clickCode)}`)
+    const headers = {}
+    if (clickIp) headers['X-Forwarded-For'] = clickIp
+    if (clickUa) headers['User-Agent'] = clickUa
+    await doApi('GET', `/api/tracking/click?affiliateCode=${encodeURIComponent(clickCode)}`, null, headers)
   }
 
   const clearSession = () => {
@@ -238,6 +282,16 @@ export default function App() {
             <section>
               <h2>Track Click</h2>
               <Field label="Affiliate Code" value={clickCode} onChange={setClick} />
+              <div className="dev-box">
+                <div className="dev-title">Preset Identities — click to fill IP + User-Agent</div>
+                {PRESET_IDENTITIES.map(p => (
+                  <div key={p.label} className="dev-row" onClick={() => { setClickIp(p.ip); setClickUa(p.ua) }}>
+                    <code>{p.label}</code><span>{p.ip}</span>
+                  </div>
+                ))}
+              </div>
+              <Field label="Simulated IP (X-Forwarded-For, dev only)" value={clickIp} onChange={setClickIp} placeholder="e.g. 203.0.113.42" />
+              <Field label="Simulated User-Agent (dev only)" value={clickUa} onChange={setClickUa} placeholder="e.g. Mozilla/5.0 (iPhone...)" />
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn blue" onClick={recordClick}>Record Click</button>
                 <button className="btn" style={{ background: '#21262d', color: '#f85149' }} onClick={clearSession}>Clear Session</button>

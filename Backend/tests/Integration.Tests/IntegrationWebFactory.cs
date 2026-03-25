@@ -2,9 +2,10 @@ namespace Integration.Tests;
 
 /// <summary>
 /// Spins up the full ASP.NET Core application, replacing all three MySQL
-/// DbContexts with isolated EF Core InMemory databases.
-/// Each factory instance gets its own unique database names so test classes
-/// never share state.
+/// DbContexts with isolated SQLite in-memory databases.
+/// SQLite enforces unique indexes — required for DbUpdateException duplicate detection.
+/// Each factory instance keeps its own open connections so in-memory databases persist
+/// for the lifetime of the factory.
 /// </summary>
 public class IntegrationWebFactory : WebApplicationFactory<Program>
 {
@@ -12,10 +13,23 @@ public class IntegrationWebFactory : WebApplicationFactory<Program>
     // by the JWT Bearer middleware (via PostConfigure below), so tokens validate correctly.
     internal const string TestSecretKey = "super-secret-key-for-integration-tests-1234567890";
 
-    private readonly string _dbSuffix = Guid.NewGuid().ToString("N");
+    private readonly SqliteConnection _affiliateConn = new("Data Source=:memory:");
+    private readonly SqliteConnection _authConn      = new("Data Source=:memory:");
+    private readonly SqliteConnection _trackingConn  = new("Data Source=:memory:");
+
+    public IntegrationWebFactory()
+    {
+        // Keep connections open so the in-memory databases persist for the factory lifetime
+        _affiliateConn.Open();
+        _authConn.Open();
+        _trackingConn.Open();
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Use "Testing" environment so Program.cs skips DevDataSeeder (which requires existing tables)
+        builder.UseEnvironment("Testing");
+
         // Override config so modules don't throw on missing connection string / JWT settings
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -31,13 +45,12 @@ public class IntegrationWebFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
-            // Replace all three MySQL DbContexts with InMemory
-            ReplaceWithInMemory<AffiliateDbContext>(services, $"integration_affiliate_{_dbSuffix}");
-            ReplaceWithInMemory<AuthDbContext>     (services, $"integration_auth_{_dbSuffix}");
-            ReplaceWithInMemory<TrackingDbContext> (services, $"integration_tracking_{_dbSuffix}");
+            // Replace all three MySQL DbContexts with SQLite in-memory
+            ReplaceWithSqlite<AffiliateDbContext>(services, _affiliateConn);
+            ReplaceWithSqlite<AuthDbContext>     (services, _authConn);
+            ReplaceWithSqlite<TrackingDbContext> (services, _trackingConn);
 
             // Replace JwtSettings singleton so AuthService signs tokens with TestSecretKey.
-            // (AuthModule.RegisterServices already registered one from appsettings.json)
             var jwtDescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(JwtSettings));
             if (jwtDescriptor != null) services.Remove(jwtDescriptor);
@@ -68,7 +81,23 @@ public class IntegrationWebFactory : WebApplicationFactory<Program>
         });
     }
 
-    private static void ReplaceWithInMemory<TContext>(IServiceCollection services, string dbName)
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+
+        // Create the schema (tables + indexes) for all three DbContexts.
+        // EnsureCreated() applies EF model including unique indexes — required for
+        // DbUpdateException duplicate detection in TrackingService.
+        using var scope = host.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        sp.GetRequiredService<AuthDbContext>().Database.EnsureCreated();
+        sp.GetRequiredService<AffiliateDbContext>().Database.EnsureCreated();
+        sp.GetRequiredService<TrackingDbContext>().Database.EnsureCreated();
+
+        return host;
+    }
+
+    private static void ReplaceWithSqlite<TContext>(IServiceCollection services, SqliteConnection connection)
         where TContext : DbContext
     {
         var descriptor = services.SingleOrDefault(
@@ -76,6 +105,17 @@ public class IntegrationWebFactory : WebApplicationFactory<Program>
         if (descriptor != null)
             services.Remove(descriptor);
 
-        services.AddDbContext<TContext>(opt => opt.UseInMemoryDatabase(dbName));
+        services.AddDbContext<TContext>(opt => opt.UseSqlite(connection));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _affiliateConn.Dispose();
+            _authConn.Dispose();
+            _trackingConn.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

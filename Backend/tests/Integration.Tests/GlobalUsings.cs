@@ -1,6 +1,8 @@
 global using System.Net;
 global using System.Net.Http.Headers;
 global using System.Net.Http.Json;
+global using Microsoft.Data.Sqlite;
+global using Microsoft.Extensions.Hosting;
 global using Auth.Application.DTOs;
 global using Tracking.Application.DTOs;
 global using Xunit;

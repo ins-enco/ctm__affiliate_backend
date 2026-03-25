@@ -14,7 +14,10 @@ public class TrackingController(ITrackingService trackingService, IConfiguration
 
         Request.Cookies.TryGetValue(cookieName, out var existingSessionId);
 
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        // In Development, allow X-Forwarded-For override so the Mock FE can simulate different IPs.
+        var ipAddress = env.IsDevelopment()
+            ? Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+            : HttpContext.Connection.RemoteIpAddress?.ToString();
         var userAgent = Request.Headers.UserAgent.ToString();
 
         var result = await trackingService.RecordClickAsync(affiliateCode, ipAddress, userAgent, existingSessionId);

@@ -99,7 +99,8 @@ using (var scope = app.Services.CreateScope())
     var affiliateDb = sp.GetRequiredService<AffiliateDbContext>();
     var trackingDb  = sp.GetRequiredService<TrackingDbContext>();
 
-    if (authDb.Database.IsRelational())
+    // MigrateAsync only applies to MySQL (Pomelo). SQLite uses EnsureCreated in IntegrationWebFactory.
+    if (authDb.Database.ProviderName?.Contains("MySql", StringComparison.OrdinalIgnoreCase) == true)
     {
         await authDb.Database.MigrateAsync();
         await affiliateDb.Database.MigrateAsync();
