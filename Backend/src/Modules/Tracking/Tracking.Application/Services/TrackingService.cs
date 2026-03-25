@@ -18,7 +18,7 @@ public class TrackingService(
             ?? HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}");
 
         var alreadyExists = await db.ClickEvents
-            .Apply(new UniqueClickSpecification(affiliateId, sessionId))
+            .Apply(new ClickByAffiliateAndSessionSpecification(affiliateId, sessionId))
             .AnyAsync();
 
         if (alreadyExists)
@@ -31,7 +31,6 @@ public class TrackingService(
             IPAddress = ipAddress,
             UserAgent = userAgent,
             ClickedAt = DateTime.UtcNow,
-            IsUnique = true
         });
         await db.SaveChangesAsync();
 
@@ -48,7 +47,7 @@ public class TrackingService(
             throw new InvalidOperationException($"Invalid conversion type '{request.ConversionType}'. Must be Registration or Deposit.");
 
         var alreadyConverted = await db.ConversionEvents
-            .Apply(new UniqueConversionSpecification(request.SessionId, request.ConversionType))
+            .Apply(new ConversionBySessionAndTypeSpecification(request.SessionId, request.ConversionType))
             .AnyAsync();
 
         if (alreadyConverted)

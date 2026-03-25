@@ -86,18 +86,18 @@ public static class DevDataSeeder
     {
         var now = DateTime.UtcNow;
 
-        // Alice (Id=1) — 10 clicks (10 unique), 3 conversions
+        // Alice (Id=1) — 10 clicks, 3 conversions
         db.ClickEvents.AddRange(
-            Click(1, "SES-A1", unique: true, days: -1),
-            Click(1, "SES-A2", unique: true, days: -2),
-            Click(1, "SES-A3", unique: true, days: -3),
-            Click(1, "SES-A4", unique: true, days: -4),
-            Click(1, "SES-A5", unique: true, days: -5),
-            Click(1, "SES-A6", unique: true, days: -6),
-            Click(1, "SES-A7", unique: true, days: -9),
-            Click(1, "SES-A8", unique: true, days: -12),
-            Click(1, "SES-A9", unique: true, days: -20),
-            Click(1, "SES-AA", unique: true, days: -30)
+            Click(1, "SES-A1", days: -1),
+            Click(1, "SES-A2", days: -2),
+            Click(1, "SES-A3", days: -3),
+            Click(1, "SES-A4", days: -4),
+            Click(1, "SES-A5", days: -5),
+            Click(1, "SES-A6", days: -6),
+            Click(1, "SES-A7", days: -9),
+            Click(1, "SES-A8", days: -12),
+            Click(1, "SES-A9", days: -20),
+            Click(1, "SES-AA", days: -30)
         );
         db.ConversionEvents.AddRange(
             Conversion(1, "SES-A1", type: "Registration", days: -1),
@@ -105,12 +105,12 @@ public static class DevDataSeeder
             Conversion(1, "SES-A5", type: "Deposit",      days: -5)
         );
 
-        // Bob (Id=2) — 4 clicks (4 unique), 0 conversions
+        // Bob (Id=2) — 4 clicks, 0 conversions
         db.ClickEvents.AddRange(
-            Click(2, "SES-B1", unique: true, days: -2),
-            Click(2, "SES-B2", unique: true, days: -5),
-            Click(2, "SES-B3", unique: true, days: -8),
-            Click(2, "SES-B4", unique: true, days: -15)
+            Click(2, "SES-B1", days: -2),
+            Click(2, "SES-B2", days: -5),
+            Click(2, "SES-B3", days: -8),
+            Click(2, "SES-B4", days: -15)
         );
 
         // Carol (Id=3) — no history
@@ -123,12 +123,11 @@ public static class DevDataSeeder
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static ClickEvent Click(int affiliateId, string session, bool unique, int days) =>
+    private static ClickEvent Click(int affiliateId, string session, int days) =>
         new()
         {
             AffiliateId = affiliateId,
             SessionId   = session,
-            IsUnique    = unique,
             ClickedAt   = DateTime.UtcNow.AddDays(days),
             CreatedAt   = DateTime.UtcNow,
             UpdatedAt   = DateTime.UtcNow,

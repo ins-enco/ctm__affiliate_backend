@@ -11,7 +11,6 @@ public class ClickEventConfiguration : IEntityTypeConfiguration<ClickEvent>
         entity.Property(e => e.IPAddress).HasMaxLength(45);
         entity.Property(e => e.UserAgent).HasMaxLength(512);
         entity.Property(e => e.ClickedAt).IsRequired();
-        entity.Property(e => e.IsUnique).IsRequired();
         entity.Property(e => e.CreatedAt).IsRequired();
         entity.Property(e => e.UpdatedAt).IsRequired();
 

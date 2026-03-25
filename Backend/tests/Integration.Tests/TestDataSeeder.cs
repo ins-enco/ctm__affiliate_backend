@@ -67,13 +67,11 @@ public static class TestDataSeeder
 
         db.ClickEvents.AddRange(
             // 3 unique clicks within the last 7 days
-            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-A", IsUnique = true,  ClickedAt = now.AddDays(-1),  CreatedAt = now, UpdatedAt = now },
-            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-B", IsUnique = true,  ClickedAt = now.AddDays(-3),  CreatedAt = now, UpdatedAt = now },
-            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-C", IsUnique = true,  ClickedAt = now.AddDays(-5),  CreatedAt = now, UpdatedAt = now },
+            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-A",  ClickedAt = now.AddDays(-1),  CreatedAt = now, UpdatedAt = now },
+            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-B",  ClickedAt = now.AddDays(-3),  CreatedAt = now, UpdatedAt = now },
+            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-C",  ClickedAt = now.AddDays(-5),  CreatedAt = now, UpdatedAt = now },
             // 1 unique click older than 7 days
-            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-D", IsUnique = true,  ClickedAt = now.AddDays(-10), CreatedAt = now, UpdatedAt = now },
-            // 1 repeat visit (not unique)
-            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-A", IsUnique = false, ClickedAt = now.AddDays(-2),  CreatedAt = now, UpdatedAt = now }
+            new ClickEvent { AffiliateId = SeededAffiliateId, SessionId = "SES-D",  ClickedAt = now.AddDays(-10), CreatedAt = now, UpdatedAt = now }
         );
         await db.SaveChangesAsync();
     }

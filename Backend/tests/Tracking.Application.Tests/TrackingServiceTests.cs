@@ -46,7 +46,6 @@ public class TrackingServiceTests
             AffiliateId = 1,
             SessionId = "SESSION-A",
             ClickedAt = DateTime.UtcNow,
-            IsUnique = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });
@@ -94,7 +93,6 @@ public class TrackingServiceTests
             AffiliateId = 3,
             SessionId = "SESSION-B",
             ClickedAt = DateTime.UtcNow.AddMinutes(-5),
-            IsUnique = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         });

@@ -8,5 +8,4 @@ public class ClickEvent : BaseEntity
     public string? IPAddress { get; set; }
     public string? UserAgent { get; set; }
     public DateTime ClickedAt { get; set; }
-    public bool IsUnique { get; set; }
 }

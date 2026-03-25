@@ -83,7 +83,7 @@ public class SeededScenarioTests : IClassFixture<SeededIntegrationFactory>
 
         // Based on TestDataSeeder: 5 total rows, 4 unique, 3 unique within last 7 days
         Assert.Equal(TestDataSeeder.SeededCode, dashboard!.UniqueCode);
-        Assert.Equal(5, dashboard.TotalClicks);
+        Assert.Equal(4, dashboard.TotalClicks);
         Assert.Equal(4, dashboard.UniqueClicks);
         Assert.Equal(3, dashboard.Last7DayClicks);
     }

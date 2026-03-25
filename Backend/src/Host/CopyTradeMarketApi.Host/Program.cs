@@ -98,12 +98,20 @@ builder.Services.AddControllers()
 var app = builder.Build();
 
 // Step 10a — Auto-migrate all module databases (idempotent, safe on every startup)
+// Skipped for non-relational providers (e.g. EF InMemory used in integration tests)
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
-    await sp.GetRequiredService<AuthDbContext>().Database.MigrateAsync();
-    await sp.GetRequiredService<AffiliateDbContext>().Database.MigrateAsync();
-    await sp.GetRequiredService<TrackingDbContext>().Database.MigrateAsync();
+    var authDb     = sp.GetRequiredService<AuthDbContext>();
+    var affiliateDb = sp.GetRequiredService<AffiliateDbContext>();
+    var trackingDb  = sp.GetRequiredService<TrackingDbContext>();
+
+    if (authDb.Database.IsRelational())
+    {
+        await authDb.Database.MigrateAsync();
+        await affiliateDb.Database.MigrateAsync();
+        await trackingDb.Database.MigrateAsync();
+    }
 }
 
 // Step 10b — Seed dev data (Development only)
