@@ -7,8 +7,8 @@ public class AffiliateDashboardServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options);
 
-    private static IMemoryCache CreateCache() =>
-        new MemoryCache(new MemoryCacheOptions());
+    private static ICacheService CreateCache() =>
+        new MemoryCacheService(new MemoryCache(new MemoryCacheOptions()));
 
     [Fact]
     public async Task GetDashboard_WhenAffiliateFound_ReturnsDashboardResult()

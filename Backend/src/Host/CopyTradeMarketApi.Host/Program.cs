@@ -18,8 +18,9 @@ var modules = new List<IModule>
     new AffiliateModule()   // Step 4
 };
 
-// Step 5 — In-memory cache
+// Step 5 — In-memory cache + cache abstraction
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 // Step 5b — Domain event publisher
 builder.Services.AddScoped<IEventPublisher, EventPublisher>();
@@ -70,14 +71,6 @@ builder.Services.AddAuthentication("Bearer")
 builder.Services.AddAuthorization();
 
 // Step 8b — CORS (allows the React frontend at localhost:3000 / Vite dev at 5173)
-builder.Services.AddCors(options =>
-    options.AddDefaultPolicy(policy => policy
-        .WithOrigins("http://localhost:3000", "http://localhost:5173")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()));
-
-// Step 8b — CORS (allows the test frontend at localhost:3000)
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy => policy
         .WithOrigins("http://localhost:3000", "http://localhost:5173")

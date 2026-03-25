@@ -1,6 +1,6 @@
 namespace Tracking.Application.Tests;
 
-public class TrackingServiceTests
+public class HighTrafficClickServiceTests
 {
     private static TrackingDbContext CreateDbContext() =>
         new(new DbContextOptionsBuilder<TrackingDbContext>()
@@ -11,6 +11,11 @@ public class TrackingServiceTests
     {
         var mock = new Mock<ICacheService>();
         mock.Setup(c => c.Remove(It.IsAny<string>()));
+        mock.Setup(c => c.GetOrCreateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<Task<(int, string)?>>>(),
+                It.IsAny<TimeSpan>()))
+            .Returns<string, Func<Task<(int, string)?>>, TimeSpan>((_, factory, _) => factory());
         return mock;
     }
 
@@ -25,7 +30,7 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByCodeAsync("AFF00001"))
                   .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act
         var result = await service.RecordClickAsync("AFF00001", "1.2.3.4", "Mozilla", existingSessionId: null);
@@ -37,35 +42,6 @@ public class TrackingServiceTests
     }
 
     [Fact]
-    public async Task RecordClick_ExistingSession_ReturnIsUniqueFalseWithoutDbWrite()
-    {
-        // Arrange
-        var db = CreateDbContext();
-        db.ClickEvents.Add(new ClickEvent
-        {
-            AffiliateId = 1,
-            SessionId = "SESSION-A",
-            ClickedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        });
-        await db.SaveChangesAsync();
-
-        var mockLookup = new Mock<IAffiliateLookupService>();
-        mockLookup.Setup(l => l.FindByCodeAsync("AFF00001"))
-                  .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
-
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
-
-        // Act
-        var result = await service.RecordClickAsync("AFF00001", null, null, existingSessionId: "SESSION-A");
-
-        // Assert
-        Assert.False(result.IsUnique);
-        Assert.Equal(1, await db.ClickEvents.CountAsync()); // no new row
-    }
-
-    [Fact]
     public async Task RecordClick_UnknownAffiliateCode_ThrowsKeyNotFoundException()
     {
         // Arrange
@@ -74,12 +50,15 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByCodeAsync(It.IsAny<string>()))
                   .ReturnsAsync((ValueTuple<int, string>?)null);
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.RecordClickAsync("BADCODE1", "1.2.3.4", "Agent", existingSessionId: null));
     }
+
+    // Note: duplicate-click test (DbUpdateException path) requires a real DB with unique index enforcement.
+    // EF Core InMemory provider does not enforce unique constraints — covered in integration tests instead.
 
     // ── RecordConversion ──────────────────────────────────────────────────────
 
@@ -102,7 +81,7 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByIdAsync(3))
                   .ReturnsAsync((affiliateId: 3, uniqueCode: "AFF00003"));
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act
         var result = await service.RecordConversionAsync(
@@ -120,7 +99,7 @@ public class TrackingServiceTests
         // Arrange
         var db = CreateDbContext();
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act
         var result = await service.RecordConversionAsync(
@@ -149,7 +128,7 @@ public class TrackingServiceTests
         await db.SaveChangesAsync();
 
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ConflictException>(() =>
@@ -162,7 +141,7 @@ public class TrackingServiceTests
         // Arrange
         var db = CreateDbContext();
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new HighTrafficClickService(db, mockLookup.Object, CreateCacheMock().Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>

@@ -3,7 +3,7 @@ namespace Affiliate.Application.Services;
 public class AffiliateDashboardService(
     AffiliateDbContext db,
     IClickStatsReader clickStatsReader,
-    IMemoryCache cache) : IAffiliateDashboardService
+    ICacheService cache) : IAffiliateDashboardService
 {
     public async Task<DashboardResult> GetDashboardAsync(int affiliateId)
     {
@@ -13,11 +13,10 @@ public class AffiliateDashboardService(
         var stats = await clickStatsReader.GetAsync(affiliateId);
 
         var cacheKey = $"affiliate:clickcount:{affiliateId}";
-        var cachedCount = cache.GetOrCreate(cacheKey, entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-            return stats.TotalClicks;
-        });
+        var cachedCount = await cache.GetOrCreateAsync(
+            cacheKey,
+            () => Task.FromResult<int?>(stats.TotalClicks),
+            TimeSpan.FromMinutes(5));
 
         return new DashboardResult(
             affiliate.Name,
@@ -26,6 +25,6 @@ public class AffiliateDashboardService(
             stats.UniqueClicks,
             stats.Last7DayClicks,
             stats.ConvertedClicks,
-            cachedCount);
+            cachedCount ?? stats.TotalClicks);
     }
 }
