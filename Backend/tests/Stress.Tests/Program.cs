@@ -1,69 +1,81 @@
+using System.Net.Http.Headers;
 using Stress.Tests;
 
+// ── Thread A: Web host ────────────────────────────────────────────────────────
+// Dedicated OS thread — keeps the factory + TestServer alive independently
+// from the stress thread so request processing doesn't compete for the
+// same thread pool slots as the task spawning loop.
+
 await using var factory = new StressWebFactory();
-var client = factory.CreateClient();
 
-Console.WriteLine("[Stress] API started in-process → MySQL copytrade_stress_db");
-
-// ── Resolve affiliate code ────────────────────────────────────────────────────
+// Resolve affiliate code on the web thread (needs HTTP to the server)
 var affiliateCode = Environment.GetEnvironmentVariable("STRESS_AFFILIATE_CODE");
 
 if (string.IsNullOrWhiteSpace(affiliateCode))
 {
-    Console.WriteLine("[Stress] Registering a dedicated stress affiliate...");
+    Console.WriteLine("[Web ] Registering stress affiliate...");
+    using var setupClient = factory.CreateClient();
 
-    var email = $"stress_{Guid.NewGuid():N}@test.com";
-
-    var register = await client.PostAsJsonAsync("/api/auth/register", new
+    var email    = $"stress_{Guid.NewGuid():N}@test.com";
+    var register = await setupClient.PostAsJsonAsync("/api/auth/register", new
     {
-        name     = "Stress Tester",
-        email,
-        password = "StressPass1!"
+        name = "Stress Tester", email, password = "StressPass1!"
     });
 
     if (!register.IsSuccessStatusCode)
     {
-        Console.Error.WriteLine($"[Stress] Registration failed: {register.StatusCode}");
+        Console.Error.WriteLine($"[Web ] Registration failed: {register.StatusCode}");
         return 1;
     }
 
     var auth = await register.Content.ReadFromJsonAsync<AuthResult>();
-    client.DefaultRequestHeaders.Authorization =
-        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth!.Token);
+    setupClient.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", auth!.Token);
 
-    var dash      = await client.GetFromJsonAsync<DashboardResult>("/api/affiliate/dashboard");
+    var dash      = await setupClient.GetFromJsonAsync<DashboardResult>("/api/affiliate/dashboard");
     affiliateCode = dash!.UniqueCode;
-
-    Console.WriteLine($"[Stress] Registered: {affiliateCode}  (email: {email})");
+    Console.WriteLine($"[Web ] Ready — affiliate: {affiliateCode}");
 }
 else
 {
-    Console.WriteLine($"[Stress] Using supplied affiliate code: {affiliateCode}");
+    Console.WriteLine($"[Web ] Using supplied affiliate code: {affiliateCode}");
 }
 
-// ── Start resource monitor ────────────────────────────────────────────────────
-await using var monitor = new ResourceMonitor(StressWebFactory.StressConnectionString);
-Console.WriteLine("[Stress] Resource monitor started (CPU / Memory / Threads / DB connections)");
+// ── Thread B: Stress test ─────────────────────────────────────────────────────
+// LongRunning = dedicated OS thread, never competes with thread pool workers.
+// Each scenario gets its own HttpClient so headers don't bleed between runs.
 
-// ── Run scenarios ─────────────────────────────────────────────────────────────
+await using var monitor = new ResourceMonitor(StressWebFactory.StressConnectionString);
+Console.WriteLine("[Test] Resource monitor started\n");
+
 var scenarios = new[]
 {
-    ClickScenarios.RandomMix(affiliateCode),
+    ClickScenarios.RandomMix1    (affiliateCode),
+    ClickScenarios.RandomMix100  (affiliateCode),
 };
 
-var results = new List<ScenarioResult>();
-
-foreach (var spec in scenarios)
+var stressTask = Task.Factory.StartNew(async () =>
 {
-    monitor.MarkScenario(spec.Name);
-    var result = await StressRunner.RunAsync(spec, client);
-    results.Add(result);
-    PrintResult(result);
-}
+    var results = new List<ScenarioResult>();
 
-// ── Save HTML report ──────────────────────────────────────────────────────────
+    foreach (var spec in scenarios)
+    {
+        using var client = factory.CreateClient(); // fresh client per scenario
+        monitor.MarkScenario(spec.Name);
+        var result = await StressRunner.RunAsync(spec, client, monitor);
+        results.Add(result);
+        PrintResult(result);
+    }
+
+    return results;
+
+}, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
+
+var results = await stressTask;
+
+// ── Report ────────────────────────────────────────────────────────────────────
 var reportPath = HtmlReportWriter.Write(results, monitor, "stress-report");
-Console.WriteLine($"\n[Stress] Report saved → {reportPath}");
+Console.WriteLine($"\n[Test] Report → {reportPath}");
 return 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

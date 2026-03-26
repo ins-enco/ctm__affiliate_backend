@@ -10,4 +10,6 @@ public sealed record ResourceSample(
     long   ThreadPoolPendingItems,   // queued work items waiting for a thread
     // MySQL server-side
     int    DbThreadsConnected,       // total open connections (incl. idle pool)
-    int    DbThreadsRunning);        // actively executing queries right now
+    int    DbThreadsRunning,         // actively executing queries right now
+    long   DbQueriesPerSec,          // delta of Questions counter → actual QPS
+    long   DbInsertsPerSec);         // delta of Innodb_rows_inserted → inserts/sec

@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Stress.Tests;
@@ -41,6 +42,11 @@ public class StressWebFactory : WebApplicationFactory<Host::Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
+        // Suppress all logging — at 1M req/s Serilog floods the console with
+        // EF Core warnings (duplicate key) and request logs, blocking the
+        // reporter thread on the console lock and freezing the live display.
+        builder.ConfigureLogging(logging => logging.ClearProviders());
 
         builder.ConfigureTestServices(services =>
         {

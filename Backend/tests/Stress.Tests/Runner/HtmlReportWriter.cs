@@ -50,10 +50,15 @@ public static class HtmlReportWriter
             ("Pending Items", "#e74c3c", s => (double)s.ThreadPoolPendingItems),
         ]);
 
-        var dbChart = BuildChart("DB Connections (MySQL)", "connections", samples, markers,
+        var dbChart = BuildChart("DB Queries/sec + Threads Running", "count", samples, markers,
         [
-            ("Connected (pool)", "#1abc9c", s => (double)s.DbThreadsConnected),
-            ("Running (active)", "#e74c3c", s => (double)s.DbThreadsRunning),
+            ("Queries/sec",     "#1abc9c", s => (double)s.DbQueriesPerSec),
+            ("Threads running", "#f39c12", s => (double)s.DbThreadsRunning),
+        ]);
+
+        var dbInsertChart = BuildChart("DB Inserts/sec (click_events)", "inserts", samples, markers,
+        [
+            ("Inserts/sec", "#e74c3c", s => (double)s.DbInsertsPerSec),
         ]);
 
         var html = $$"""
@@ -109,6 +114,7 @@ public static class HtmlReportWriter
                 {{memChart}}
                 {{threadChart}}
                 {{dbChart}}
+                {{dbInsertChart}}
               </div>
             </body>
             </html>
