@@ -114,8 +114,8 @@ const PRESET_IDENTITIES = [
   },
 ]
 
-const TABS = ['register', 'login', 'dashboard', 'click', 'convert']
-const TAB_LABELS = { register: 'Register', login: 'Login', dashboard: 'Dashboard', click: 'Track Click', convert: 'Convert' }
+const TABS = ['register', 'login', 'dashboard', 'click', 'convert', 'attrDemo']
+const TAB_LABELS = { register: 'Register', login: 'Login', dashboard: 'Dashboard', click: 'Track Click', convert: 'Convert', attrDemo: 'Attribution Demo' }
 
 export default function App() {
   const [token,  setToken]  = useState(() => localStorage.getItem('ct_token'))
@@ -131,6 +131,13 @@ export default function App() {
   const [clickIp,   setClickIp] = useState('')
   const [clickUa,   setClickUa] = useState('')
   const [convForm,  setConv]  = useState({ sessionId: '', conversionType: 'Registration', userId: '' })
+
+  // Attribution Demo state
+  const [attrCode,    setAttrCode]    = useState('ALICE001')
+  const [attrIp,      setAttrIp]      = useState('55.66.77.88')
+  const [attrUa,      setAttrUa]      = useState('AttrDemoAgent/1.0')
+  const [attrStep1,   setAttrStep1]   = useState(null)
+  const [attrStep2,   setAttrStep2]   = useState(null)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const doApi = async (method, path, body, extraHeaders = {}) => {
@@ -189,6 +196,23 @@ export default function App() {
   const changeIp = (ip) => {
     setClickIp(ip)
     clearSession(true)
+  }
+
+  const attrStep1Click = async () => {
+    setAttrStep1(null)
+    setAttrStep2(null)
+    document.cookie = 'aff_sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    const r = await apiFetch('GET', `/api/tracking/click?affiliateCode=${encodeURIComponent(attrCode)}`,
+      null, token, { 'X-Forwarded-For': attrIp, 'User-Agent': attrUa })
+    setAttrStep1(r)
+  }
+
+  const attrStep2Click = async () => {
+    setAttrStep2(null)
+    document.cookie = 'aff_sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    const r = await apiFetch('GET', `/api/tracking/click?affiliateCode=${encodeURIComponent(attrCode)}`,
+      null, token, { 'X-Forwarded-For': attrIp, 'User-Agent': attrUa })
+    setAttrStep2(r)
   }
 
   const recordConversion = async () => {
@@ -307,6 +331,63 @@ export default function App() {
                 include the cookie and auto-record a Registration conversion.
                 Use <strong>Clear Session</strong> to reset and test the flow again.
               </p>
+            </section>
+          )}
+
+          {/* Attribution Demo */}
+          {tab === 'attrDemo' && (
+            <section>
+              <h2>Attribution Window Demo</h2>
+              <p className="hint">
+                Session ID = <code>SHA256(IP + UserAgent + affiliateCode + <strong>month</strong>)</code>.
+                Clearing the cookie alone is not enough — the DB unique index blocks the same hash forever
+                within the same month. In a new month, the hash changes → counted as a fresh unique click.
+              </p>
+
+              <Field label="Affiliate Code" value={attrCode} onChange={setAttrCode} />
+              <Field label="Simulated IP"   value={attrIp}   onChange={setAttrIp} placeholder="e.g. 55.66.77.88" />
+              <Field label="Simulated User-Agent" value={attrUa} onChange={setAttrUa} placeholder="e.g. AttrDemoAgent/1.0" />
+
+              <div className="dev-box" style={{ marginBottom: '1rem' }}>
+                <div className="dev-title">Step 1 — First click (new identity)</div>
+                <p className="hint" style={{ marginBottom: '0.5rem' }}>
+                  Clears any existing cookie, then records a click. Should return <code>isUnique: true</code>.
+                </p>
+                <button className="btn green" onClick={attrStep1Click}>Record First Click</button>
+                {attrStep1 && (
+                  <pre className="log-data" style={{ marginTop: '0.5rem' }}>
+                    HTTP {attrStep1.status} — isUnique: {String(attrStep1.data?.isUnique)}
+                    {'\n'}{JSON.stringify(attrStep1.data, null, 2)}
+                  </pre>
+                )}
+              </div>
+
+              <div className="dev-box" style={{ marginBottom: '1rem' }}>
+                <div className="dev-title">Step 2 — Repeat click (cookie cleared, same identity)</div>
+                <p className="hint" style={{ marginBottom: '0.5rem' }}>
+                  Clears the cookie first, then records the same IP + UA again in the same month.
+                  Should return <code>isUnique: false</code> — the DB unique index blocks it.
+                </p>
+                <button className="btn" style={{ background: '#21262d', color: '#f85149' }} onClick={attrStep2Click}>
+                  Clear Cookie &amp; Repeat Click
+                </button>
+                {attrStep2 && (
+                  <pre className="log-data" style={{ marginTop: '0.5rem' }}>
+                    HTTP {attrStep2.status} — isUnique: {String(attrStep2.data?.isUnique)}
+                    {'\n'}{JSON.stringify(attrStep2.data, null, 2)}
+                  </pre>
+                )}
+              </div>
+
+              <div className="dev-box">
+                <div className="dev-title">Step 3 — New month (production behaviour)</div>
+                <p className="hint">
+                  On the 1st of the next month, the bucket string changes from <code>2025-01</code> to <code>2025-02</code>.
+                  The same IP + UA + code produces a different SHA-256 hash → the DB unique index has no matching row →
+                  the click is recorded as <code>isUnique: true</code> again.
+                  To test this in isolation, run the integration test <code>AttributionWindowTests</code> which pins the bucket via DI override.
+                </p>
+              </div>
             </section>
           )}
 

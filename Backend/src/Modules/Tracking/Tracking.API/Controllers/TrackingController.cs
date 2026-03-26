@@ -22,12 +22,13 @@ public class TrackingController(ITrackingService trackingService, IConfiguration
 
         var result = await trackingService.RecordClickAsync(affiliateCode, ipAddress, userAgent, existingSessionId);
 
-        // Set the aff_sid cookie if it's a new session
-        if (existingSessionId is null)
+        // Set the aff_sid cookie if it's a new session.
+        // Use result.SessionId (returned by the service) so the cookie always
+        // matches what was stored in the DB — even if the hash includes extras
+        // like an attribution bucket.
+        if (existingSessionId is null && result.SessionId is not null)
         {
-            Response.Cookies.Append(cookieName, result.IsUnique
-                ? CopyTradeMarketApi.Shared.Helpers.HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}")
-                : existingSessionId ?? string.Empty,
+            Response.Cookies.Append(cookieName, result.SessionId,
                 new CookieOptions
                 {
                     HttpOnly = !env.IsDevelopment(),

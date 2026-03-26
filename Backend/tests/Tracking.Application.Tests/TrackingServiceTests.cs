@@ -60,6 +60,69 @@ public class TrackingServiceTests
     // Note: duplicate-click test (DbUpdateException path) requires a real DB with unique index enforcement.
     // EF Core InMemory provider does not enforce unique constraints — covered in integration tests instead.
 
+    // ── Attribution Window (monthly bucket) ───────────────────────────────────
+
+    // Subclass that lets tests pin the attribution bucket to a fixed value,
+    // simulating clicks in different calendar months without advancing the clock.
+    private sealed class FixedBucketTrackingService(
+        TrackingDbContext db,
+        IAffiliateLookupService lookup,
+        ICacheService cache,
+        string bucket)
+        : TrackingService(db, lookup, cache)
+    {
+        protected override string GetAttributionBucket() => bucket;
+    }
+
+    [Fact]
+    public async Task RecordClick_SameBucket_StoresSameSessionId()
+    {
+        // Arrange
+        var db = CreateDbContext();
+        var mockLookup = new Mock<IAffiliateLookupService>();
+        mockLookup.Setup(l => l.FindByCodeAsync("AFF00001"))
+                  .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
+        var service = new FixedBucketTrackingService(db, mockLookup.Object, CreateCacheMock().Object, "2025-01");
+
+        // Act — click twice with the same identity in the same bucket.
+        // InMemory allows both inserts; in real MySQL the second would be blocked
+        // by the unique index on (AffiliateId, SessionId).
+        await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+        await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+
+        var sessions = await db.ClickEvents.Select(c => c.SessionId).ToListAsync();
+
+        // Both stored in InMemory — but identical hashes confirm the real DB
+        // unique index would reject the second insert.
+        Assert.Equal(2, sessions.Count);
+        Assert.Equal(sessions[0], sessions[1]);
+    }
+
+    [Fact]
+    public async Task RecordClick_DifferentBuckets_ProduceDifferentSessionIds()
+    {
+        // Arrange
+        var db = CreateDbContext();
+        var mockLookup = new Mock<IAffiliateLookupService>();
+        mockLookup.Setup(l => l.FindByCodeAsync("AFF00001"))
+                  .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
+        var cache = CreateCacheMock();
+
+        var svcJan = new FixedBucketTrackingService(db, mockLookup.Object, cache.Object, "2025-01");
+        var svcFeb = new FixedBucketTrackingService(db, mockLookup.Object, cache.Object, "2025-02");
+
+        // Act — same IP + UA + code, but different months
+        await svcJan.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+        await svcFeb.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+
+        var sessions = await db.ClickEvents.Select(c => c.SessionId).ToListAsync();
+
+        // Different buckets → different hashes → two distinct rows →
+        // real MySQL unique index would allow both as separate unique clicks.
+        Assert.Equal(2, sessions.Count);
+        Assert.NotEqual(sessions[0], sessions[1]);
+    }
+
     // ── RecordConversion ──────────────────────────────────────────────────────
 
     [Fact]

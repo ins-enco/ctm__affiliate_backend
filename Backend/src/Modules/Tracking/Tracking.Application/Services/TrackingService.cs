@@ -7,6 +7,12 @@ public class TrackingService(
 {
     private static readonly TimeSpan AffiliateCacheTtl = TimeSpan.FromMinutes(10);
 
+    // Returns a monthly bucket string included in the session hash.
+    // Same IP+UA+code in a different month → different hash → new unique click.
+    // Override in tests to control time without injecting a clock abstraction.
+    protected virtual string GetAttributionBucket() =>
+        DateTime.UtcNow.ToString("yyyy-MM");
+
     public async Task<ClickResult> RecordClickAsync(
         string affiliateCode, string? ipAddress, string? userAgent, string? existingSessionId)
     {
@@ -19,7 +25,7 @@ public class TrackingService(
         var (affiliateId, _) = affiliate;
 
         var sessionId = existingSessionId
-            ?? HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}");
+            ?? HashHelper.Sha256($"{ipAddress}{userAgent}{affiliateCode}{GetAttributionBucket()}");
 
         try
         {
@@ -34,12 +40,12 @@ public class TrackingService(
             await db.SaveChangesAsync();
 
             cache.Remove($"affiliate:clickcount:{affiliateId}");
-            return new ClickResult(true, affiliateCode, "Click recorded.");
+            return new ClickResult(true, affiliateCode, "Click recorded.", sessionId);
         }
         catch (DbUpdateException)
         {
             // Duplicate session caught by DB unique index on (AffiliateId, SessionId)
-            return new ClickResult(false, affiliateCode, "Click already recorded for this session.");
+            return new ClickResult(false, affiliateCode, "Click already recorded for this session.", sessionId);
         }
     }
 
