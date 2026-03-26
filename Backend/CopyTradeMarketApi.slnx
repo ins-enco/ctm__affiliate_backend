@@ -30,5 +30,6 @@
     <Project Path="tests/Auth.Application.Tests/Auth.Application.Tests.csproj" />
     <Project Path="tests/Tracking.Application.Tests/Tracking.Application.Tests.csproj" />
     <Project Path="tests/Integration.Tests/Integration.Tests.csproj" />
+    <Project Path="tests/Stress.Tests/Stress.Tests.csproj" />
   </Folder>
 </Solution>

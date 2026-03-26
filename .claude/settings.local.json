@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"C:\\\\Users\\\\nam.nguyen\\\\Documents\\\\Backend\\\\tests\\\\Integration.Tests\\\\ClickStressTests.cs\")"
+    ]
+  }
+}

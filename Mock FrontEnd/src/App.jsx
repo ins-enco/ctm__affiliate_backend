@@ -180,9 +180,15 @@ export default function App() {
     await doApi('GET', `/api/tracking/click?affiliateCode=${encodeURIComponent(clickCode)}`, null, headers)
   }
 
-  const clearSession = () => {
+  const clearSession = (silent = false) => {
     document.cookie = 'aff_sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    setLog(prev => [{ method: '—', url: 'aff_sid cookie', status: 200, data: { message: 'Session cookie cleared.' }, id: Date.now() }, ...prev])
+    if (!silent)
+      setLog(prev => [{ method: '—', url: 'aff_sid cookie', status: 200, data: { message: 'Session cookie cleared.' }, id: Date.now() }, ...prev])
+  }
+
+  const changeIp = (ip) => {
+    setClickIp(ip)
+    clearSession(true)
   }
 
   const recordConversion = async () => {
@@ -285,12 +291,12 @@ export default function App() {
               <div className="dev-box">
                 <div className="dev-title">Preset Identities — click to fill IP + User-Agent</div>
                 {PRESET_IDENTITIES.map(p => (
-                  <div key={p.label} className="dev-row" onClick={() => { setClickIp(p.ip); setClickUa(p.ua) }}>
+                  <div key={p.label} className="dev-row" onClick={() => { changeIp(p.ip); setClickUa(p.ua) }}>
                     <code>{p.label}</code><span>{p.ip}</span>
                   </div>
                 ))}
               </div>
-              <Field label="Simulated IP (X-Forwarded-For, dev only)" value={clickIp} onChange={setClickIp} placeholder="e.g. 203.0.113.42" />
+              <Field label="Simulated IP (X-Forwarded-For, dev only)" value={clickIp} onChange={changeIp} placeholder="e.g. 203.0.113.42" />
               <Field label="Simulated User-Agent (dev only)" value={clickUa} onChange={setClickUa} placeholder="e.g. Mozilla/5.0 (iPhone...)" />
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn blue" onClick={recordClick}>Record Click</button>
