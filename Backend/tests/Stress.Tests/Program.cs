@@ -52,6 +52,8 @@ var scenarios = new[]
 {
     ClickScenarios.RandomMix1    (affiliateCode),
     ClickScenarios.RandomMix100  (affiliateCode),
+    ClickScenarios.RandomMix1K    (affiliateCode),
+    ClickScenarios.RandomMix100K    (affiliateCode),
 };
 
 var stressTask = Task.Factory.StartNew(async () =>
