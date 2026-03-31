@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "specs/milestone-1/tasks.md",
+                "file": "specs/uc-06-auto-record-registration/tasks.md",
                 "mode": "source",
                 "source": false
               },
@@ -185,6 +185,17 @@
   },
   "active": "f93e759eef0ea46e",
   "lastOpenFiles": [
+    "specs/uc-04-record-conversion/spec.md",
+    "specs/uc-06-auto-record-registration/tasks.md",
+    "specs/uc-05-view-dashboard/tasks.md",
+    "specs/uc-04-record-conversion/tasks.md",
+    "specs/uc-03-record-click/tasks.md",
+    "specs/uc-03-record-click/spec.md",
+    "specs/uc-02-user-login/tasks.md",
+    "specs/uc-02-user-login/spec.md",
+    "specs/uc-01-user-registration/tasks.md",
+    "specs/uc-01-user-registration/spec.md",
+    "specs/milestone-1/tasks.md",
     "specs/milestone-1/spec.md",
     "specs/milestone-1/plan.md",
     "specs/milestone-1/data-model.md"
