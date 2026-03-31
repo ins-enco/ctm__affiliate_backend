@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "specs/milestone-1/tasks.md",
+                "file": "specs/milestone-1/data-model.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "tasks"
+              "title": "data-model"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "specs/milestone-1/tasks.md",
+                "file": "specs/milestone-1/data-model.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for tasks"
+              "title": "Backlinks for data-model"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "specs/milestone-1/tasks.md",
+                "file": "specs/milestone-1/data-model.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from tasks"
+              "title": "Outgoing links from data-model"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "specs/milestone-1/tasks.md",
+                "file": "specs/milestone-1/data-model.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of tasks"
+              "title": "Outline of data-model"
             }
           }
         ]
@@ -185,6 +185,7 @@
   },
   "active": "f93e759eef0ea46e",
   "lastOpenFiles": [
+    "specs/milestone-1/tasks.md",
     "specs/milestone-1/spec.md",
     "specs/milestone-1/plan.md",
     "specs/milestone-1/data-model.md"

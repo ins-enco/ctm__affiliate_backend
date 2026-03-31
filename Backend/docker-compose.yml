@@ -25,9 +25,33 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=copytrade_db;User=root;Password=Nam781999@;"
       JwtSettings__SecretKey: "OxIjFnF2skOtotoSk3Ra3yvQt/5ZJSqIPX1a/NVUsBM="
+      Serilog__WriteTo__2__Args__uri: "http://loki:3100"
     depends_on:
       db:
         condition: service_healthy
+      loki:
+        condition: service_started
+
+  # ── Grafana Loki ──────────────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # ── Grafana ───────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
 
   # ── React Frontend ─────────────────────────────────────────────────────────
   frontend:
@@ -43,3 +67,4 @@ services:
 
 volumes:
   mysql_data:
+  grafana_data:

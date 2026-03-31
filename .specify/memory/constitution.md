@@ -186,7 +186,7 @@ All entities extend `BaseEntity` (`CreatedAt`, `UpdatedAt` — UTC).
 | Database | MySQL 8.0 (prod) / SQLite (tests) |
 | Auth | JWT Bearer HS256 (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
 | Password hashing | BCrypt.Net-Next |
-| Logging | Serilog (console + rolling file) |
+| Logging | Serilog (console + rolling file) | GrafanaLoki
 | Caching | `IMemoryCache` via `MemoryCacheService` (swappable to Redis) |
 | API docs | Swashbuckle / Swagger UI |
 | Unit testing | xUnit + Moq |
