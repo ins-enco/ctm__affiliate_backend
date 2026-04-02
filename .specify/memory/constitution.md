@@ -3,7 +3,7 @@
 ---
 id: institution
 version: 1.0.0
-status: approved
+status: in-review
 owners:
   - tech-lead
   - product-manager
