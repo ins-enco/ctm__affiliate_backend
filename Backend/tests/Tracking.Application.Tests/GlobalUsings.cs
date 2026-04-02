@@ -1,4 +1,6 @@
 global using Xunit;
+global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.Logging.Abstractions;
 global using Microsoft.EntityFrameworkCore;
 global using Tracking.Application.Services;
 global using Tracking.Domain.Entities;

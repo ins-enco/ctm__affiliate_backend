@@ -12,8 +12,9 @@ internal sealed class BucketOverrideTrackingService(
     TrackingDbContext db,
     IAffiliateLookupService lookup,
     ICacheService cache,
+    ILogger<TrackingService> logger,
     Func<string> getBucket)
-    : TrackingService(db, lookup, cache)
+    : TrackingService(db, lookup, cache, logger)
 {
     protected override string GetAttributionBucket() => getBucket();
 }
@@ -36,6 +37,7 @@ public class AttributionWindowFactory : IntegrationWebFactory
                     sp.GetRequiredService<TrackingDbContext>(),
                     sp.GetRequiredService<IAffiliateLookupService>(),
                     sp.GetRequiredService<ICacheService>(),
+                    sp.GetRequiredService<ILogger<TrackingService>>(),
                     () => CurrentBucket));
         });
     }

@@ -30,7 +30,7 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByCodeAsync("AFF00001"))
                   .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act
         var result = await service.RecordClickAsync("AFF00001", "1.2.3.4", "Mozilla", existingSessionId: null);
@@ -50,7 +50,7 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByCodeAsync(It.IsAny<string>()))
                   .ReturnsAsync((ValueTuple<int, string>?)null);
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -69,7 +69,7 @@ public class TrackingServiceTests
         IAffiliateLookupService lookup,
         ICacheService cache,
         string bucket)
-        : TrackingService(db, lookup, cache)
+        : TrackingService(db, lookup, cache, NullLogger<TrackingService>.Instance)
     {
         protected override string GetAttributionBucket() => bucket;
     }
@@ -144,7 +144,7 @@ public class TrackingServiceTests
         mockLookup.Setup(l => l.FindByIdAsync(3))
                   .ReturnsAsync((affiliateId: 3, uniqueCode: "AFF00003"));
 
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act
         var result = await service.RecordConversionAsync(
@@ -162,7 +162,7 @@ public class TrackingServiceTests
         // Arrange
         var db = CreateDbContext();
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act
         var result = await service.RecordConversionAsync(
@@ -191,7 +191,7 @@ public class TrackingServiceTests
         await db.SaveChangesAsync();
 
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<ConflictException>(() =>
@@ -204,7 +204,7 @@ public class TrackingServiceTests
         // Arrange
         var db = CreateDbContext();
         var mockLookup = new Mock<IAffiliateLookupService>();
-        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object);
+        var service = new TrackingService(db, mockLookup.Object, CreateCacheMock().Object, NullLogger<TrackingService>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>

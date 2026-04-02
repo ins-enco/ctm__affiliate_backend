@@ -1,4 +1,5 @@
 global using CopyTradeMarketApi.Shared.Abstractions;
+global using Microsoft.Extensions.Logging;
 global using CopyTradeMarketApi.Shared.Cache;
 global using CopyTradeMarketApi.Shared.Exceptions;
 global using CopyTradeMarketApi.Shared.Helpers;
