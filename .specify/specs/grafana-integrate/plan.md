@@ -4,89 +4,81 @@
 
 ### Tech Stack
 - .NET 8 / ASP.NET Core — existing host
-- Serilog — already configured in `Program.cs` with console + file sinks
-- `Serilog.Sinks.Grafana.Loki` — new NuGet sink to ship logs to Loki
-- Grafana Loki — log aggregation backend (new Docker service)
-- Grafana — dashboard/alerting UI (new Docker service)
-- Docker Compose — existing orchestration extended with Loki + Grafana services
+- Serilog — already configured in `Program.cs` (console + file sinks, `appsettings.json`-driven)
+- `Serilog.Sinks.Grafana.Loki` — new NuGet package, adds a Loki HTTP sink
+- `Serilog.Sinks.TestCorrelator` — new NuGet package (test only), captures log events in-memory for assertions
 
 ### Architecture Approach
-- **Log pipeline**: `Serilog` (in-process) → Loki HTTP sink (async, fire-and-forget) → Grafana queries Loki
-- **No new modules**: Grafana integration lives entirely in the Host project (Serilog config) and Docker Compose. It does not require a new IModule.
-- **No new DB entities**: Loki is the store for log data. No EF migrations needed.
-- **Business metrics via structured logs**: Clicks and conversions are already domain events; enrich log events at event handler call sites with structured properties (`AffiliateCode`, `ConversionType`, `SessionId`) so Loki/Grafana can derive metrics via LogQL.
-- **Dashboards as code**: Grafana dashboards provisioned via JSON files mounted into the Grafana container — kept in `infra/grafana/dashboards/`.
+- **Change surface is minimal**: only `appsettings.json` (Loki sink config) and two call sites in `TrackingService.cs` (structured log properties on click/conversion results)
+- **No new module, no new DbContext, no new migrations**
+- Loki sink is added to the existing `"WriteTo"` array in `appsettings.json` — endpoint URL read from environment variable via `"Args": { "uri": "#{Loki__Uri}#" }` pattern, or directly from config key `Loki:Uri`
+- Business event log properties are emitted in `TrackingService.RecordClickAsync` and `RecordConversionAsync` after successful DB writes — structured properties only, no PII
 
 ### Constitution Check
-- [x] **P1 — Modules Are Islands**: No inter-module references introduced. Serilog enrichment happens at existing event handler boundaries, not by coupling modules.
-- [x] **P2 — Specification Pattern**: Not applicable (no new DB queries).
-- [x] **P3 — Domain Events for Side Effects**: Business metric logs are emitted at domain event handler call sites (e.g., `UserRegisteredEventHandler`, click tracking), not by cross-module direct calls.
-- [x] **P4 — Secrets Never In Source**: Loki URL and Grafana admin password provided via environment variables / Docker Compose env, not hardcoded.
-- [x] **P5 — Async All the Way**: Loki sink is configured in batched async mode (`queueLimit`, `batchPostingLimit`) — never blocks request pipeline.
-- [x] **P6 — Consistent Error Contract**: Not applicable to log shipping. ExceptionHandlingMiddleware already logs errors via Serilog before returning ProblemDetails.
+- [x] **P1 — Modules Are Islands**: No inter-module references. Serilog is host-level infrastructure; `TrackingService` adds log calls within its own boundary.
+- [x] **P2 — Specification Pattern**: Not applicable — no new DB queries.
+- [x] **P3 — Domain Events for Side Effects**: Not applicable — logging is a local side effect, not a cross-module concern.
+- [x] **P4 — Secrets Never In Source**: Loki URI provided via `Loki:Uri` config key, sourced from environment variable. Never hardcoded. `appsettings.json` uses placeholder `"SET_VIA_USER_SECRETS_OR_ENV"`.
+- [x] **P5 — Async All the Way**: Loki sink configured with `batchPostingLimit` and `queueLimit` — fire-and-forget, does not block request thread.
+- [x] **P6 — Consistent Error Contract**: Not applicable to log shipping. `ExceptionHandlingMiddleware` already logs errors via Serilog before returning ProblemDetails.
 
 ---
 
 ## Phase 0: Research
 
 ### Unknowns to Resolve
-- Alert notification channel: email, Slack webhook, or PagerDuty? *(Open — default to Slack webhook placeholder in provisioning config)*
-- Dashboard management: confirmed as code (JSON in repo).
-- Grafana hosting: confirmed as Docker Compose alongside the API.
+- Loki endpoint URL format for the target environment — placeholder used; must be supplied via env var at deploy time.
 
 ### Decisions Made
 
 | Decision | Choice | Rationale | Alternatives |
 |---|---|---|---|
-| Log transport | `Serilog.Sinks.Grafana.Loki` | Fits existing Serilog pipeline; no agent needed | Promtail sidecar (more ops overhead), direct HTTP to Loki (reinventing the sink) |
-| Business metrics source | Structured log properties on existing domain event handlers | No new infrastructure; LogQL can aggregate by label | Prometheus counters (requires new `/metrics` endpoint, out of scope) |
-| Dashboard provisioning | JSON files in `infra/grafana/dashboards/` | Version-controlled, reproducible | Grafana UI (manual, not reproducible) |
-| Grafana access control | Grafana built-in auth (admin account only); not exposed on public port | Simplest for internal/Docker use | OAuth, LDAP (over-engineering for current stage) |
-| Sensitive field filtering | Destructure policy + log level gate in Serilog config | P4 compliance; no IP/email at Info+ | Custom sink filter |
+| Loki sink package | `Serilog.Sinks.Grafana.Loki` | Native Serilog integration; no agent sidecar needed | Promtail sidecar (more ops overhead), raw HTTP (reinventing the sink) |
+| Loki URI config | `Loki:Uri` in `appsettings.json` with env var override | Consistent with existing config pattern (P4) | Hardcoded (violates P4) |
+| Business event log placement | After successful `db.SaveChangesAsync()` in `TrackingService` | Ensures log only fires on confirmed writes; no phantom events | Before save (risks logging events that didn't persist) |
+| PII exclusion mechanism | Structured log properties never include `IpAddress`, `Email`, `UserAgent` — only derived/safe fields | Simplest approach; no destructure policy needed if properties are simply never passed | Serilog destructure policy (more complex, same result) |
+| Test approach | `Serilog.Sinks.TestCorrelator` in unit tests | In-process, fast, no Loki instance needed | Integration test hitting real Loki (slow, infra dependency) |
 
 ---
 
 ## Phase 1: Design
 
 ### Data Model
-No new database entities. See [data-model.md](data-model.md) for the Loki log schema (structured log field contracts).
+No new database entities. See [data-model.md](data-model.md) for the structured log event field contract.
 
 ### Interface Contracts
-See [contracts/loki-log-schema.md](contracts/loki-log-schema.md) for the structured log event contract.
+See [contracts/loki-log-schema.md](contracts/loki-log-schema.md) for the log event schema Loki consumers depend on.
 
 ### Project Structure
 
+Only two files change in production code; one test file is added:
+
 ```
-CopyTradeMarket/
-├── Backend/
-│   ├── src/
-│   │   └── Host/
-│   │       └── CopyTradeMarketApi.Host/
-│   │           └── appsettings.json              # Add Loki sink config (URL via env var)
-│   └── docker-compose.yml                        # Add loki + grafana services
+Backend/
+├── src/
+│   └── Host/
+│       └── CopyTradeMarketApi.Host/
+│           └── appsettings.json                        # ADD Loki sink to "WriteTo" array
 │
-└── infra/
-    └── grafana/
-        ├── provisioning/
-        │   ├── datasources/
-        │   │   └── loki.yml                      # Auto-provision Loki datasource
-        │   └── dashboards/
-        │       └── dashboards.yml                # Dashboard discovery config
-        └── dashboards/
-            ├── business-metrics.json             # Clicks + conversions dashboard
-            └── system-health.json                # HTTP metrics + error rate dashboard
+│   └── Modules/
+│       └── Tracking/
+│           └── Tracking.Application/
+│               └── Services/
+│                   └── TrackingService.cs              # ADD structured log calls after SaveChangesAsync
+│
+└── tests/
+    └── Tracking.Application.Tests/
+        └── LokiLogSchemaTests.cs                       # NEW — assert structured props + PII exclusion
 ```
 
 ---
 
 ## Dependencies
 
-| Package / Service | Version | Purpose |
+| Package | Project | Purpose |
 |---|---|---|
-| `Serilog.Sinks.Grafana.Loki` | latest stable | Ships Serilog log events to Loki |
-| `Serilog.Enrichers.Environment` | already referenced | `MachineName` enrichment (already in use) |
-| Grafana Loki | `grafana/loki:2.9` | Log aggregation backend |
-| Grafana | `grafana/grafana:10.4` | Dashboard + alerting UI |
+| `Serilog.Sinks.Grafana.Loki` | `CopyTradeMarketApi.Host` | Ships log events to Loki over HTTP |
+| `Serilog.Sinks.TestCorrelator` | `Tracking.Application.Tests` | Captures Serilog events in-memory for unit test assertions |
 
 ---
 
@@ -94,8 +86,7 @@ CopyTradeMarket/
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| Loki sink blocks request thread under back-pressure | Low | High | Configure `queueLimit` + `batchPostingLimit`; sink drops on overflow |
-| Sensitive data (email/IP) leaks into Loki | Medium | High | Serilog destructure policy + `MinimumLevel.Override` for sensitive loggers; verified in integration test |
-| Grafana container not accessible in CI | Low | Low | Grafana/Loki are Docker Compose optional profile; CI tests do not depend on them |
-| Dashboard JSON drift from actual log schema | Medium | Medium | Document log field contract in `contracts/loki-log-schema.md`; update both together |
-| Loki disk usage grows unbounded | Low | Medium | Set `retention_period: 30d` in Loki config |
+| Loki URI not set in environment → sink silently drops or throws | Medium | Low | Sink configured with `handleLogLevelRestrictions: false`; app starts normally if Loki unreachable |
+| PII field accidentally added to log call | Low | High | Unit test (`LokiLogSchemaTests`) asserts absence of `IpAddress`, `Email`, `UserAgent` — fails build if violated |
+| Loki sink blocks request under back-pressure | Low | High | `queueLimit` set; sink drops events on overflow rather than blocking |
+| `appsettings.json` Loki URI accidentally committed with real value | Low | Medium | Placeholder value `"SET_VIA_USER_SECRETS_OR_ENV"` committed; real value only in env |

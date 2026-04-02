@@ -1,49 +1,24 @@
 # Contract: Loki Log Schema
 
 ## Overview
-This contract defines the structured log event format that the CopyTradeMarket API emits to Grafana Loki. Dashboard queries and alert rules must conform to this schema. Any change to log property names requires updating both the emitting code and the affected dashboards.
+Defines the structured log events the CopyTradeMarket API emits to Loki. Any change to property names or values is a breaking change to this contract and requires updating both the emitting code and any dependent LogQL queries.
 
 ---
 
-## Loki Push API
-- **Endpoint**: `http://loki:3100/loki/api/v1/push` (internal Docker network)
-- **Protocol**: HTTP/JSON (Serilog Loki sink handles serialization)
-- **Auth**: None (internal network only)
+## Loki Push Endpoint
+- **Config key**: `Loki:Uri`
+- **Source**: Environment variable — never hardcoded
+- **Protocol**: HTTP/JSON (handled by `Serilog.Sinks.Grafana.Loki`)
 
 ---
 
-## Log Stream Labels
+## Stream Labels
 
 ```json
 {
   "app": "copytrade-api",
   "environment": "Development | Production",
-  "level": "Information | Warning | Error | Fatal",
-  "module": "Auth | Tracking | Affiliate | Host"
-}
-```
-
----
-
-## Log Entry Payload (JSON body)
-
-```json
-{
-  "Timestamp": "2026-04-02T10:00:00.000Z",
-  "Level": "Information",
-  "MessageTemplate": "Click recorded for affiliate {AffiliateCode} session {SessionId}",
-  "RenderedMessage": "Click recorded for affiliate ABC12345 session a3f9...",
-  "Properties": {
-    "MachineName": "api-host",
-    "RequestId": "0HN2ABC:00000001",
-    "RequestPath": "/api/tracking/click",
-    "StatusCode": 200,
-    "Elapsed": 42.5,
-    "SourceContext": "Tracking.Application.TrackingService",
-    "AffiliateCode": "ABC12345",
-    "SessionId": "a3f9c1d2e5b7...",
-    "EventType": "ClickRecorded"
-  }
+  "level": "Information | Warning | Error | Fatal"
 }
 ```
 
@@ -52,38 +27,43 @@ This contract defines the structured log event format that the CopyTradeMarket A
 ## Business Event Schemas
 
 ### ClickRecorded
+Emitted in `TrackingService.RecordClickAsync` after successful `SaveChangesAsync`.
+
 ```json
 {
-  "EventType": "ClickRecorded",
-  "AffiliateCode": "<8-char code>",
-  "SessionId": "<SHA256 hex>"
+  "Level": "Information",
+  "Properties": {
+    "EventType": "ClickRecorded",
+    "AffiliateCode": "<8-char code>",
+    "SessionId": "<SHA256 hex>"
+  }
 }
 ```
 
 ### ConversionRecorded
-```json
-{
-  "EventType": "ConversionRecorded",
-  "AffiliateCode": "<8-char code>",
-  "SessionId": "<SHA256 hex>",
-  "ConversionType": "Registration | Deposit"
-}
-```
+Emitted in `TrackingService.RecordConversionAsync` after successful `SaveChangesAsync`.
 
-### UserRegistered
 ```json
 {
-  "EventType": "UserRegistered",
-  "AffiliateCode": "<8-char code>"
+  "Level": "Information",
+  "Properties": {
+    "EventType": "ConversionRecorded",
+    "AffiliateCode": "<8-char code>",
+    "SessionId": "<SHA256 hex>",
+    "ConversionType": "Registration | Deposit"
+  }
 }
 ```
 
 ---
 
-## Alert Thresholds (Grafana Alert Rules)
+## Guaranteed Absent Fields
 
-| Alert | Condition | Window | Severity |
-|---|---|---|---|
-| High Error Rate | error log count > 10 | 5 min | Critical |
-| High Latency | P95 Elapsed > 2000ms | 5 min | Warning |
-| Error Rate % | errors / total requests > 5% | 5 min | Critical |
+These properties MUST NOT appear in any log entry at `Information` level or above:
+
+- `IpAddress`
+- `UserAgent`
+- `Email`
+- `Password`
+
+Enforced by unit test `LokiLogSchemaTests` using `Serilog.Sinks.TestCorrelator`.
