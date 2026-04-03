@@ -84,18 +84,12 @@ public class TrackingServiceTests
                   .ReturnsAsync((affiliateId: 1, uniqueCode: "AFF00001"));
         var service = new FixedBucketTrackingService(db, mockLookup.Object, CreateCacheMock().Object, "2025-01");
 
-        // Act — click twice with the same identity in the same bucket.
-        // InMemory allows both inserts; in real MySQL the second would be blocked
-        // by the unique index on (AffiliateId, SessionId).
-        await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
-        await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+        // Act — same identity, same bucket → hash must be deterministic
+        var result1 = await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
+        var result2 = await service.RecordClickAsync("AFF00001", "10.0.0.1", "TestAgent/1.0", null);
 
-        var sessions = await db.ClickEvents.Select(c => c.SessionId).ToListAsync();
-
-        // Both stored in InMemory — but identical hashes confirm the real DB
-        // unique index would reject the second insert.
-        Assert.Equal(2, sessions.Count);
-        Assert.Equal(sessions[0], sessions[1]);
+        // Same inputs → same session ID (real DB unique index would reject the duplicate)
+        Assert.Equal(result1.SessionId, result2.SessionId);
     }
 
     [Fact]

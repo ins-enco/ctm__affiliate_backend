@@ -118,6 +118,7 @@ All errors are surfaced as RFC 7807 ProblemDetails via `ExceptionHandlingMiddlew
 - **Mocking**: Only mock interfaces crossing module boundaries (`IAffiliateLookupService`, `IEventPublisher`). Never mock EF DbContext — use in-memory instead.
 - **Test naming**: `{Method}_{Condition}_{ExpectedOutcome}` (e.g., `Register_WithDuplicateEmail_ThrowsConflictException`)
 - **Structure**: Arrange / Act / Assert — one assertion focus per `[Fact]`.
+- **InMemory limitation**: EF Core InMemory does not enforce unique indexes. Never assert row counts or DB state that depends on uniqueness constraints — those are false positives in unit tests and contradictions in integration tests. Assert deterministic behavior via return values instead (e.g., compare `result1.SessionId == result2.SessionId`, not `db.ClickEvents.Count() == 2`). Duplicate-insert paths must be covered in `Integration.Tests` where SQLite enforces the schema.
 
 ### Integration Tests (`Integration.Tests`)
 - **Framework**: xUnit + `WebApplicationFactory<Program>`
