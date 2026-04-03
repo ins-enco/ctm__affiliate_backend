@@ -1,6 +1,6 @@
 ---
 id: validation-data-plan
-version: 1.1.0
+version: 1.2.0
 status: draft
 owners:
   - tech-lead
@@ -20,8 +20,8 @@ last-reviewed: 2026-04-03
 - xUnit + Moq (unit tests), WebApplicationFactory (integration tests)
 
 ### Architecture Approach
-- **Built-in first**: Use DataAnnotations for `[Required]`, `[EmailAddress]`, `[MinLength]`, `[MaxLength]` — no custom code needed for these.
-- **Custom only where needed**: `[PasswordField]` inherits `ValidationAttribute` and is the only hand-written attribute. It lives in `CopyTradeMarketApi.Shared/Validation/` so all modules can reference it.
+- **Built-in first**: Use DataAnnotations for `[Required]`, `[MinLength]`, `[MaxLength]` — no custom code needed for these.
+- **Custom where built-ins fall short**: Two hand-written attributes in `CopyTradeMarketApi.Shared/Validation/`: `[PasswordField]` (complexity rules) and `[StrictEmailField]` (TLD-enforcing email format). The built-in `[EmailAddress]` is too permissive — it accepts `user@e` — so `[StrictEmailField]` replaces it.
 - **ASP.NET Core model binding handles the pipeline**: Model validation runs automatically before controller actions. We override `InvalidModelStateResponseFactory` in `Program.cs` to shape the error response as `403` + `errors` map.
 - **No `IAsyncActionFilter` needed**: The built-in validation pipeline is sufficient; a custom filter would duplicate it.
 - **No `DtoValidator` class needed**: `Validator.TryValidateObject()` is the engine; our only job is to reshape `ModelStateDictionary` into the correct response shape.
@@ -47,7 +47,8 @@ last-reviewed: 2026-04-03
 | Decision | Rationale | Alternatives Considered |
 |---|---|---|
 | Use built-in DataAnnotations for common rules | Zero new code; framework maintains it | All-custom attributes — rejected: unnecessary duplication |
-| Single custom `[PasswordField]` attribute | DataAnnotations has no complexity rule; one place to maintain | FluentValidation — rejected: third-party dep, overkill for one attribute |
+| Replace `[EmailAddress]` with `[StrictEmailField]` | Built-in `[EmailAddress]` accepts `user@e` (no TLD required) — too permissive for production | `[RegularExpression]` inline — rejected: not reusable, not self-documenting |
+| Custom `[PasswordField]` and `[StrictEmailField]` attributes | DataAnnotations has no complexity or strict-email rule; one place each to maintain | FluentValidation — rejected: third-party dep, overkill for two attributes |
 | Override `InvalidModelStateResponseFactory` | Least-invasive integration point; single line in `Program.cs` | Global `IAsyncActionFilter` — rejected: duplicates built-in model validation pipeline |
 | `[PasswordField]` constructor params for rules | Makes attribute self-documenting at the call site; no external config needed | `IOptions<T>` config — rejected: overkill for compile-time constraints |
 
@@ -102,23 +103,24 @@ See [`contracts/validation-error-response.md`](contracts/validation-error-respon
 ```
 Backend/src/Shared/CopyTradeMarketApi.Shared/
 └── Validation/
-    └── PasswordFieldAttribute.cs    ← custom ValidationAttribute subclass
+    ├── PasswordFieldAttribute.cs      ← custom ValidationAttribute subclass (done)
+    └── StrictEmailFieldAttribute.cs   ← enforces local@domain.tld with TLD required
 ```
 
 **Files to modify:**
 
 ```
 Backend/src/Host/CopyTradeMarketApi.Host/Program.cs
-  └── Override ApiBehaviorOptions.InvalidModelStateResponseFactory → 403 + errors map
+  └── Override ApiBehaviorOptions.InvalidModelStateResponseFactory → 403 + errors map (done)
 
 Backend/src/Modules/Auth/Auth.Application/DTOs/RegisterRequest.cs
-  └── [Required][MaxLength(100)] Name, [Required][EmailAddress] Email, [Required][PasswordField] Password
+  └── [Required][MaxLength(100)] Name, [Required][StrictEmailField] Email, [Required][PasswordField] Password
 
 Backend/src/Modules/Auth/Auth.Application/DTOs/LoginRequest.cs
-  └── [Required][EmailAddress] Email, [Required] Password
+  └── [Required][StrictEmailField] Email, [Required] Password
 
 Backend/src/Modules/Tracking/Tracking.Application/DTOs/ConversionRequest.cs
-  └── [Required] SessionId, [Required] ConversionType
+  └── [Required] SessionId, [Required] ConversionType (done)
 ```
 
 ---

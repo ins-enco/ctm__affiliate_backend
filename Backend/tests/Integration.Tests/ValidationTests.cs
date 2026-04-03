@@ -34,20 +34,26 @@ public class ValidationTests : IClassFixture<IntegrationWebFactory>
         Assert.True(errors.ContainsKey("password") || errors.ContainsKey("Password"), "Missing 'password' error");
     }
 
-    [Fact]
-    public async Task Register_WithInvalidEmail_Returns403WithEmailError()
+    [Theory]
+    [InlineData("not-an-email")]
+    [InlineData("user@e")]          // single-char domain, no TLD
+    [InlineData("user@example")]    // missing TLD
+    [InlineData("@example.com")]    // missing local part
+    [InlineData("userexample.com")] // missing @
+    public async Task Register_WithInvalidEmail_Returns403WithEmailError(string badEmail)
     {
         var resp = await _client.PostAsJsonAsync("/api/auth/register", new
         {
             name     = "Test User",
-            email    = "not-an-email",
+            email    = badEmail,
             password = "ValidPass1!"
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
 
         var errors = await ReadErrors(resp);
-        Assert.True(errors.ContainsKey("email") || errors.ContainsKey("Email"));
+        Assert.True(errors.ContainsKey("email") || errors.ContainsKey("Email"),
+            $"Expected email error for input '{badEmail}'");
     }
 
     [Fact]

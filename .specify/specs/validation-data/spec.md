@@ -1,6 +1,6 @@
 ---
 id: validation-data
-version: 1.1.0
+version: 1.2.0
 status: draft
 owners:
   - tech-lead
@@ -25,12 +25,12 @@ When a request fails validation, the API returns `403 Forbidden` with a structur
 **So that** incoming JSON is validated automatically before reaching any service logic
 
 **Acceptance Criteria:**
-- [ ] `[Required]` rejects null or whitespace-only string values
-- [ ] `[EmailAddress]` rejects values that do not conform to standard email format
-- [ ] `[MinLength(n)]` rejects strings shorter than `n` characters
-- [ ] `[MaxLength(n)]` rejects strings longer than `n` characters
-- [ ] All violated rules are collected in a single pass (not fail-fast on first error)
-- [ ] A request that passes all rules proceeds to the service layer without modification
+- [x] `[Required]` rejects null or whitespace-only string values
+- [x] `[StrictEmailField]` rejects values that do not conform to standard email format (`local@domain.tld` — TLD required); replaces the lenient built-in `[EmailAddress]`
+- [x] `[MinLength(n)]` rejects strings shorter than `n` characters
+- [x] `[MaxLength(n)]` rejects strings longer than `n` characters
+- [x] All violated rules are collected in a single pass (not fail-fast on first error)
+- [x] A request that passes all rules proceeds to the service layer without modification
 
 ---
 
@@ -40,23 +40,26 @@ When a request fails validation, the API returns `403 Forbidden` with a structur
 **So that** I can identify exactly which fields are invalid and why
 
 **Acceptance Criteria:**
-- [ ] A request with one or more validation violations returns `403 Forbidden`
-- [ ] The response body conforms to RFC 7807 ProblemDetails with an additional `errors` map: `{ "fieldName": ["rule violated", ...] }`
-- [ ] Each entry in `errors` names the exact DTO property and describes the violated rule in plain language
-- [ ] A valid request receives no `errors` field in the response
+- [x] A request with one or more validation violations returns `403 Forbidden`
+- [x] The response body conforms to RFC 7807 ProblemDetails with an additional `errors` map: `{ "fieldName": ["rule violated", ...] }`
+- [x] Each entry in `errors` names the exact DTO property and describes the violated rule in plain language
+- [x] A valid request receives no `errors` field in the response
 
 ---
 
-### US3 - Custom `[PasswordField]` Attribute Enforces Complexity Rules (P1)
+### US3 - Custom Attributes for Rules DataAnnotations Cannot Express (P1)
 **As a** developer  
-**I want to** annotate a password property with `[PasswordField]`  
-**So that** the platform enforces a consistent password strength policy that DataAnnotations cannot express
+**I want to** annotate fields with `[PasswordField]` and `[StrictEmailField]`  
+**So that** the platform enforces rules that the built-in DataAnnotations attributes cannot express
 
 **Acceptance Criteria:**
-- [ ] `[PasswordField]` requires: minimum 8 characters, at least one uppercase letter, at least one digit, at least one special character
-- [ ] Each unmet sub-rule is reported as a separate error message for that field
-- [ ] `[PasswordField]` inherits from `System.ComponentModel.DataAnnotations.ValidationAttribute` so it integrates with the standard validation pipeline
-- [ ] The minimum length and character requirements are configurable as constructor parameters on the attribute
+- [x] `[PasswordField]` requires: minimum 8 characters, at least one uppercase letter, at least one digit, at least one special character
+- [x] Each unmet `[PasswordField]` sub-rule is reported as a separate error message for that field
+- [x] `[PasswordField]` inherits from `System.ComponentModel.DataAnnotations.ValidationAttribute` so it integrates with the standard validation pipeline
+- [x] The minimum length and character requirements are configurable as constructor parameters on the attribute
+- [x] `[StrictEmailField]` enforces `local@domain.tld` format — at least one dot after the `@` domain part
+- [x] `[StrictEmailField]` skips validation for null/empty values (defers to `[Required]`)
+- [x] `[StrictEmailField]` inherits from `ValidationAttribute` and integrates with the standard validation pipeline
 
 ---
 
@@ -66,10 +69,11 @@ When a request fails validation, the API returns `403 Forbidden` with a structur
 **So that** current endpoints gain validation enforcement without new business logic
 
 **Acceptance Criteria:**
-- [ ] `RegisterRequest`: `Name` annotated `[Required]`, `[MaxLength(100)]`; `Email` annotated `[Required]`, `[EmailAddress]`; `Password` annotated `[Required]`, `[PasswordField]`
-- [ ] `LoginRequest`: `Email` annotated `[Required]`, `[EmailAddress]`; `Password` annotated `[Required]`
-- [ ] `ConversionRequest`: `SessionId` annotated `[Required]`; `ConversionType` annotated `[Required]`
-- [ ] All existing integration tests continue to pass after annotation is applied
+- [x] `RegisterRequest`: `Name` annotated `[Required]`, `[MaxLength(100)]`; `Email` annotated `[Required]`, `[EmailAddress]`; `Password` annotated `[Required]`, `[PasswordField]`
+- [x] `LoginRequest`: `Email` annotated `[Required]`, `[EmailAddress]`; `Password` annotated `[Required]`
+- [x] `ConversionRequest`: `SessionId` annotated `[Required]`; `ConversionType` annotated `[Required]`
+- [x] `RegisterRequest` and `LoginRequest` `Email` fields use `[StrictEmailField]` instead of `[EmailAddress]`
+- [x] All existing integration tests continue to pass after annotation is applied
 
 ---
 

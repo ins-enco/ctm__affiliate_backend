@@ -2,6 +2,16 @@
 
 ## Phase 1 — Core Infrastructure
 
+### T0 — Create `StrictEmailFieldAttribute` in Shared
+- **File**: `Backend/src/Shared/CopyTradeMarketApi.Shared/Validation/StrictEmailFieldAttribute.cs`
+- Inherit from `System.ComponentModel.DataAnnotations.ValidationAttribute`
+- Enforce regex `^[^@\s]+@[^@\s]+\.[^@\s]+$` (requires TLD)
+- Skip validation for null/empty values (defer to `[Required]`)
+- Error message: `"{DisplayName} must be a valid email address"`
+- [x] Done
+
+---
+
 ### T1 — Create `PasswordFieldAttribute` in Shared
 - **File**: `Backend/src/Shared/CopyTradeMarketApi.Shared/Validation/PasswordFieldAttribute.cs`
 - Inherit from `System.ComponentModel.DataAnnotations.ValidationAttribute`
@@ -42,16 +52,15 @@
 ### T3 — Annotate `RegisterRequest`
 - **File**: `Backend/src/Modules/Auth/Auth.Application/DTOs/RegisterRequest.cs`
 - `Name`: `[Required]`, `[MaxLength(100)]`
-- `Email`: `[Required]`, `[EmailAddress]`
+- `Email`: `[Required]`, `[StrictEmailField]` ← replaces `[EmailAddress]`
 - `Password`: `[Required]`, `[PasswordField]`
-- Add `using System.ComponentModel.DataAnnotations;` and `using CopyTradeMarketApi.Shared.Validation;`
-- [x] Done
+- [x] Done (updated to StrictEmailField)
 
 ### T4 — Annotate `LoginRequest`
 - **File**: `Backend/src/Modules/Auth/Auth.Application/DTOs/LoginRequest.cs`
-- `Email`: `[Required]`, `[EmailAddress]`
+- `Email`: `[Required]`, `[StrictEmailField]` ← replaces `[EmailAddress]`
 - `Password`: `[Required]`
-- [x] Done
+- [x] Done (updated to StrictEmailField)
 
 ### T5 — Annotate `ConversionRequest`
 - **File**: `Backend/src/Modules/Tracking/Tracking.Application/DTOs/ConversionRequest.cs`
@@ -62,6 +71,16 @@
 ---
 
 ## Phase 3 — Tests
+
+### T6a — Unit tests for `StrictEmailFieldAttribute`
+- **File**: `Backend/tests/Auth.Application.Tests/Validation/StrictEmailFieldAttributeTests.cs`
+- `Validate_WithValidEmail_ReturnsSuccess` (e.g. `user@example.com`)
+- `Validate_WithMissingTld_ReturnsError` (e.g. `user@example`)
+- `Validate_WithNoAtSign_ReturnsError`
+- `Validate_WithNullValue_ReturnsSuccess` (defers to `[Required]`)
+- `Validate_WithEmptyString_ReturnsSuccess` (defers to `[Required]`)
+- `Validate_WithWhitespaceOnly_ReturnsSuccess` (defers to `[Required]`)
+- [x] Done
 
 ### T6 — Unit tests for `PasswordFieldAttribute`
 - **File**: `Backend/tests/Auth.Application.Tests/Validation/PasswordFieldAttributeTests.cs`
