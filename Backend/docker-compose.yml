@@ -4,14 +4,14 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: Nam781999@
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MYSQL_DATABASE: copytrade_db
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pNam781999@"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -23,8 +23,9 @@ services:
       - "5115:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=copytrade_db;User=root;Password=Nam781999@;"
-      JwtSettings__SecretKey: "OxIjFnF2skOtotoSk3Ra3yvQt/5ZJSqIPX1a/NVUsBM="
+      ConnectionStrings__DefaultConnection: "${DB_CONNECTION_STRING}"
+      JwtSettings__SecretKey: "${JWT_SECRET_KEY}"
+      Loki__Password: "${LOKI_PASSWORD}"
     depends_on:
       db:
         condition: service_healthy

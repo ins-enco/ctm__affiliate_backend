@@ -82,13 +82,29 @@ docker compose down -v       # stop + remove volumes (resets database)
 
 ### Environment Variables (api service)
 
+All secrets are supplied via a `.env` file — never committed. Copy the example and fill in values:
+
+```bash
+cp Backend/.env.example Backend/.env
+```
+
 | Variable | Description |
 |---|---|
 | `ASPNETCORE_ENVIRONMENT` | `Development` enables Swagger and dev seeding |
-| `ConnectionStrings__DefaultConnection` | MySQL connection string |
-| `JwtSettings__SecretKey` | Secret key for signing JWT tokens |
+| `DB_ROOT_PASSWORD` | MySQL root password |
+| `DB_CONNECTION_STRING` | Full MySQL connection string (must match `DB_ROOT_PASSWORD`) |
+| `JWT_SECRET_KEY` | Secret key for signing JWT tokens — minimum 32 characters |
+| `LOKI_PASSWORD` | Grafana Cloud API token for Loki log shipping |
 
-> For production, override these via a `.env` file or your container orchestration secrets — do not commit real credentials.
+> `Loki:Uri` (`https://logs-prod-020.grafana.net`) and `Loki:Username` (`1538639`) are pre-configured in `appsettings.json`. Only the API token must be provided via `LOKI_PASSWORD`.
+
+### Dev accounts (auto-seeded in Development)
+
+| Email | Password | Affiliate Code |
+|---|---|---|
+| alice@dev.com | DevPass123! | ALICE001 |
+| bob@dev.com | DevPass123! | BOB00001 |
+| carol@dev.com | DevPass123! | CAROL001 |
 
 ---
 

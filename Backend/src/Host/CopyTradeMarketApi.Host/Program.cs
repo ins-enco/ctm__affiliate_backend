@@ -1,11 +1,31 @@
-// Step 1 — Configure Serilog on the host
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(new ConfigurationBuilder()
-        .AddJsonFile("appsettings.json")
-        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
-        .Build())
-    .Enrich.WithMachineName()
-    .CreateLogger();
+// Step 1 — Build configuration (appsettings + env vars) for Serilog bootstrap
+var bootstrapConfig = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+// Step 1b — Configure Serilog, adding Loki sink if URI is provided via environment
+var loggerConfig = new LoggerConfiguration()
+    .ReadFrom.Configuration(bootstrapConfig)
+    .Enrich.WithMachineName();
+
+var lokiUri = bootstrapConfig["Loki:Uri"];
+if (!string.IsNullOrWhiteSpace(lokiUri) && !lokiUri.StartsWith("SET_VIA"))
+{
+    loggerConfig.WriteTo.GrafanaLoki(
+        uri: lokiUri,
+        credentials: new LokiCredentials
+        {
+            Login = bootstrapConfig["Loki:Username"] ?? string.Empty,
+            Password = bootstrapConfig["Loki:Password"] ?? string.Empty
+        },
+        labels: [new LokiLabel { Key = "app", Value = "copytrade-api" }],
+        batchPostingLimit: 1000,
+        queueLimit: 10000);
+}
+
+Log.Logger = loggerConfig.CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();

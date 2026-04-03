@@ -3,7 +3,8 @@ namespace Tracking.Application.Services;
 public class TrackingService(
     TrackingDbContext db,
     IAffiliateLookupService affiliateLookup,
-    ICacheService cache) : ITrackingService
+    ICacheService cache,
+    ILogger<TrackingService> logger) : ITrackingService
 {
     private static readonly TimeSpan AffiliateCacheTtl = TimeSpan.FromMinutes(10);
 
@@ -40,6 +41,8 @@ public class TrackingService(
             await db.SaveChangesAsync();
 
             cache.Remove($"affiliate:clickcount:{affiliateId}");
+            logger.LogInformation("EventType={EventType} AffiliateCode={AffiliateCode} SessionId={SessionId}",
+                "ClickRecorded", affiliateCode, sessionId);
             return new ClickResult(true, affiliateCode, "Click recorded.", sessionId);
         }
         catch (DbUpdateException)
@@ -85,6 +88,9 @@ public class TrackingService(
             ConvertedAt = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
+
+        logger.LogInformation("EventType={EventType} AffiliateCode={AffiliateCode} SessionId={SessionId} ConversionType={ConversionType}",
+            "ConversionRecorded", affiliateCode, request.SessionId, request.ConversionType);
 
         return click is not null
             ? new ConversionResult(true, affiliateCode, request.ConversionType, "Conversion recorded and attributed.")
