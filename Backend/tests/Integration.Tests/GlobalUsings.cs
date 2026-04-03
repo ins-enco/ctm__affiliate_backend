@@ -23,3 +23,5 @@ global using Tracking.Infrastructure.Persistence;
 global using Auth.Domain.Entities;
 global using Tracking.Domain.Entities;
 global using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;
+global using System.Text.Json;
+

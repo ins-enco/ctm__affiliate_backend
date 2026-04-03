@@ -11,3 +11,5 @@ global using Auth.Application.DTOs;
 global using Auth.Application.Settings;
 global using CopyTradeMarketApi.Shared.Events;
 global using Auth.Domain.Specifications;
+global using System.ComponentModel.DataAnnotations;
+global using CopyTradeMarketApi.Shared.Validation;

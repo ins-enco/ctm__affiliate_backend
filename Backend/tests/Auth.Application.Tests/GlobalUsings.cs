@@ -7,3 +7,5 @@ global using CopyTradeMarketApi.Shared.Abstractions;
 global using CopyTradeMarketApi.Shared.Exceptions;
 global using Microsoft.EntityFrameworkCore;
 global using Moq;
+global using System.ComponentModel.DataAnnotations;
+global using CopyTradeMarketApi.Shared.Validation;
