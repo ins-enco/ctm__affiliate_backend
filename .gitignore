@@ -24,6 +24,10 @@ dist/
 .env
 .env.local
 
+## Obsidian
+.specify/.obsidian/workspace.json
+.specify/.obsidian/workspace-mobile.json
+
 ## OS
 .DS_Store
 Thumbs.db
