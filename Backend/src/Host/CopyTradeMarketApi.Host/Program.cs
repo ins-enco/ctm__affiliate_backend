@@ -88,6 +88,25 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(TrackingModule).Assembly)
     .AddApplicationPart(typeof(AffiliateModule).Assembly);
 
+// Override model validation response: return 403 with field-level errors map
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = ctx =>
+    {
+        var errors = ctx.ModelState
+            .Where(e => e.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors
+                    .SelectMany(e => e.ErrorMessage.Split('|', StringSplitOptions.RemoveEmptyEntries))
+                    .ToArray()
+            );
+        var problem = new ProblemDetails { Status = 403, Title = "Validation Failed" };
+        problem.Extensions["errors"] = errors;
+        return new ObjectResult(problem) { StatusCode = 403 };
+    };
+});
+
 var app = builder.Build();
 
 // Step 10a — Auto-migrate all module databases (idempotent, safe on every startup)

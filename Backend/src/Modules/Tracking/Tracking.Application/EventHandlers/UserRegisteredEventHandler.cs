@@ -7,9 +7,11 @@ public class UserRegisteredEventHandler(ITrackingService trackingService) : IEve
         if (domainEvent.SessionId is null)
             return;
 
-        await trackingService.RecordConversionAsync(new ConversionRequest(
-            domainEvent.SessionId,
-            "Registration",
-            domainEvent.UserId));
+        await trackingService.RecordConversionAsync(new ConversionRequest
+        {
+            SessionId      = domainEvent.SessionId,
+            ConversionType = "Registration",
+            UserId         = domainEvent.UserId,
+        });
     }
 }
