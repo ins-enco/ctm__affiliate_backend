@@ -19,6 +19,8 @@ global using Microsoft.AspNetCore.Mvc.Testing;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Logging;
+global using Tracking.Application.Services;
 global using Tracking.Infrastructure.Persistence;
 global using Auth.Domain.Entities;
 global using Tracking.Domain.Entities;

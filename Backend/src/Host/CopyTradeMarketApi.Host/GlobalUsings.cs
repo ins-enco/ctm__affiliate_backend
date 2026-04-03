@@ -7,6 +7,7 @@ global using CopyTradeMarketApi.Shared.Abstractions;
 global using CopyTradeMarketApi.Shared.Cache;
 global using CopyTradeMarketApi.Shared.Events;
 global using Serilog;
+global using Serilog.Sinks.Grafana.Loki;
 global using Tracking.API;
 global using CopyTradeMarketApi.Shared.Exceptions;
 global using Microsoft.AspNetCore.Mvc;
