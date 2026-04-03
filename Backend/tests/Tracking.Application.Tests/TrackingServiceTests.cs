@@ -148,7 +148,7 @@ public class TrackingServiceTests
 
         // Act
         var result = await service.RecordConversionAsync(
-            new ConversionRequest("SESSION-B", "Registration", UserId: null));
+            new ConversionRequest { SessionId = "SESSION-B", ConversionType = "Registration", UserId = null });
 
         // Assert
         Assert.True(result.IsAttributed);
@@ -166,7 +166,7 @@ public class TrackingServiceTests
 
         // Act
         var result = await service.RecordConversionAsync(
-            new ConversionRequest("SESSION-NONE", "Deposit", UserId: null));
+            new ConversionRequest { SessionId = "SESSION-NONE", ConversionType = "Deposit", UserId = null });
 
         // Assert
         Assert.False(result.IsAttributed);
@@ -195,7 +195,7 @@ public class TrackingServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ConflictException>(() =>
-            service.RecordConversionAsync(new ConversionRequest("SESSION-C", "Registration", UserId: null)));
+            service.RecordConversionAsync(new ConversionRequest { SessionId = "SESSION-C", ConversionType = "Registration", UserId = null }));
     }
 
     [Fact]
@@ -208,6 +208,6 @@ public class TrackingServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.RecordConversionAsync(new ConversionRequest("SESSION-D", "Withdrawal", UserId: null)));
+            service.RecordConversionAsync(new ConversionRequest { SessionId = "SESSION-D", ConversionType = "Withdrawal", UserId = null }));
     }
 }

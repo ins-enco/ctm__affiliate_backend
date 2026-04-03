@@ -32,7 +32,7 @@ public class AuthServiceTests
         var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
 
         // Act
-        var result = await service.RegisterAsync(new RegisterRequest("Alice", "alice@test.com", "Password1!"));
+        var result = await service.RegisterAsync(new RegisterRequest { Name = "Alice", Email = "alice@test.com", Password = "Password1!" });
 
         // Assert
         Assert.NotEmpty(result.Token);
@@ -50,11 +50,11 @@ public class AuthServiceTests
                   .ReturnsAsync((1, "CODE0001"));
 
         var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
-        await service.RegisterAsync(new RegisterRequest("Alice", "alice@test.com", "Password1!"));
+        await service.RegisterAsync(new RegisterRequest { Name = "Alice", Email = "alice@test.com", Password = "Password1!" });
 
         // Act & Assert
         await Assert.ThrowsAsync<ConflictException>(() =>
-            service.RegisterAsync(new RegisterRequest("Alice2", "alice@test.com", "Password2!")));
+            service.RegisterAsync(new RegisterRequest { Name = "Alice2", Email = "alice@test.com", Password = "Password2!" }));
     }
 
     // ── Login ─────────────────────────────────────────────────────────────────
@@ -71,10 +71,10 @@ public class AuthServiceTests
                   .ReturnsAsync(5);
 
         var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
-        await service.RegisterAsync(new RegisterRequest("Bob", "bob@test.com", "MyPass123!"));
+        await service.RegisterAsync(new RegisterRequest { Name = "Bob", Email = "bob@test.com", Password = "MyPass123!" });
 
         // Act
-        var result = await service.LoginAsync(new LoginRequest("bob@test.com", "MyPass123!"));
+        var result = await service.LoginAsync(new LoginRequest { Email = "bob@test.com", Password = "MyPass123!" });
 
         // Assert
         Assert.NotEmpty(result.Token);
@@ -91,7 +91,7 @@ public class AuthServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            service.LoginAsync(new LoginRequest("nobody@test.com", "password")));
+            service.LoginAsync(new LoginRequest { Email = "nobody@test.com", Password = "password" }));
     }
 
     [Fact]
@@ -104,11 +104,11 @@ public class AuthServiceTests
                   .ReturnsAsync((1, "CODE0001"));
 
         var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
-        await service.RegisterAsync(new RegisterRequest("Carol", "carol@test.com", "RightPass!"));
+        await service.RegisterAsync(new RegisterRequest { Name = "Carol", Email = "carol@test.com", Password = "RightPass!" });
 
         // Act & Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            service.LoginAsync(new LoginRequest("carol@test.com", "WrongPass!")));
+            service.LoginAsync(new LoginRequest { Email = "carol@test.com", Password = "WrongPass!" }));
     }
 
     [Fact]
@@ -124,10 +124,10 @@ public class AuthServiceTests
                   .ReturnsAsync((int?)null);
 
         var service = new AuthService(db, mockLookup.Object, CreateJwtSettings(), CreateEventPublisher());
-        await service.RegisterAsync(new RegisterRequest("Dave", "dave@test.com", "Pass123!"));
+        await service.RegisterAsync(new RegisterRequest { Name = "Dave", Email = "dave@test.com", Password = "Pass123!" });
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.LoginAsync(new LoginRequest("dave@test.com", "Pass123!")));
+            service.LoginAsync(new LoginRequest { Email = "dave@test.com", Password = "Pass123!" }));
     }
 }

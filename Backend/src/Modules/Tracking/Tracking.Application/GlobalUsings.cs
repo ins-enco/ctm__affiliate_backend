@@ -10,3 +10,5 @@ global using Tracking.Infrastructure.Persistence;
 global using Tracking.Application.DTOs;
 global using CopyTradeMarketApi.Shared.Events;
 global using Tracking.Application.Services;
+global using System.ComponentModel.DataAnnotations;
+
