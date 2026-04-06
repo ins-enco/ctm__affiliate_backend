@@ -2,13 +2,13 @@
 
 ---
 id: institution
-version: 1.0.0
+version: 1.1.0
 status: in-review
 owners:
   - tech-lead
   - product-manager
 ratified: 2026-03-30
-last-reviewed: 2026-03-30
+last-reviewed: 2026-04-06
 ---
 
 ## Purpose
@@ -94,6 +94,21 @@ Any edit to an `approved` spec that changes behaviour, removes a field, or alter
 - New endpoints follow `/api/{module}/{resource}` convention
 - Breaking changes require a versioning discussion before implementation
 - All 201 responses include a correct `Location` header or resource ID
+
+### API version — automatic via CI (no manual bumping)
+
+`ApiVersion` is injected automatically by the CI pipeline on every push to `main`. **No manual version bumping is required or expected.**
+
+**How it works:**
+- `appsettings.json` holds `"ApiVersion": "0.0.0-local"` — a committed fallback for local runs
+- `appsettings.Development.json` holds `"ApiVersion": "0.0.0-dev"` — for local dev environment
+- On every push to `main`, GitHub Actions sets `ApiVersion=<short-sha>` (7-char git SHA) as a Docker environment variable before starting the container
+- .NET config precedence: environment variable wins over `appsettings.json`
+- `GET /api/version` and `GET /swagger/v1/swagger.json` (`info.version`) both reflect the injected value
+
+**FE detection:** the version changes on every deployment because every merge to `main` produces a new unique SHA.
+
+**CI workflow:** `.github/workflows/ci.yml` — runs `dotnet test` on all PRs; injects SHA and deploys on push to `main` only.
 
 ### Security rules
 - Passwords: BCrypt only — never stored plaintext or reversibly encrypted
@@ -262,4 +277,4 @@ Spec-kit CI fails on: missing required fields, empty acceptance criteria, invali
 | 2026-03-30 | Domain events for cross-module side effects | Decouples modules; Auth has no knowledge of Tracking | Tech lead |
 | 2026-03-30 | SQLite for integration tests, MySQL for prod | Fast CI; unique constraint parity sufficient for test goals | Tech lead |
 | 2026-03-30 | RFC 7807 ProblemDetails for all errors | Consistent API surface; typed exceptions make intent clear | Tech lead |
-| | | | |
+| 2026-04-03 | `ApiVersion` in `appsettings.json` as single source of truth | Propagates to both `GET /api/version` and Swagger `info.version`; no code change needed to bump | Tech lead |

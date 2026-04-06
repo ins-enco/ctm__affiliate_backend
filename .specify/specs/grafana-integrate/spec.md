@@ -18,10 +18,10 @@ Grafana setup, dashboard configuration, and alerting rules are out of scope. Thi
 **So that** logs are queryable in Grafana without accessing the server directly
 
 **Acceptance Criteria:**
-- [ ] All log entries (Info, Warning, Error) are delivered to Loki
-- [ ] Logs include structured fields: `module`, `level`, `requestId`, `timestamp`
-- [ ] Log shipping does not block the request pipeline (async/batched sink)
-- [ ] Loki endpoint is configurable via environment variable — not hardcoded
+- [x] All log entries (Info, Warning, Error) are delivered to Loki
+- [x] Logs include structured fields: `module`, `level`, `requestId`, `timestamp`
+- [x] Log shipping does not block the request pipeline (async/batched sink)
+- [x] Loki endpoint is configurable via environment variable — not hardcoded
 
 ---
 
@@ -31,9 +31,9 @@ Grafana setup, dashboard configuration, and alerting rules are out of scope. Thi
 **So that** Grafana can derive business metrics via LogQL without a direct DB connection
 
 **Acceptance Criteria:**
-- [ ] Click events include `AffiliateCode`, `SessionId`, `EventType=ClickRecorded`
-- [ ] Conversion events include `AffiliateCode`, `SessionId`, `ConversionType`, `EventType=ConversionRecorded`
-- [ ] Properties are present on `Information`-level log entries at domain event handler call sites
+- [x] Click events include `AffiliateCode`, `SessionId`, `EventType=ClickRecorded`
+- [x] Conversion events include `AffiliateCode`, `SessionId`, `ConversionType`, `EventType=ConversionRecorded`
+- [x] Properties are present on `Information`-level log entries at domain event handler call sites
 
 ---
 
@@ -43,10 +43,10 @@ Grafana setup, dashboard configuration, and alerting rules are out of scope. Thi
 **So that** the API complies with P4 (Secrets Never In Source) and avoids logging raw user data
 
 **Acceptance Criteria:**
-- [ ] `IpAddress` is never present in any Loki log entry at `Information` level or above
-- [ ] `Email` is never present in any Loki log entry at `Information` level or above
-- [ ] `UserAgent` is never present in any Loki log entry at `Information` level or above
-- [ ] A unit test asserts absence of these fields using an in-memory Serilog sink
+- [x] `IpAddress` is never present in any Loki log entry at `Information` level or above
+- [x] `Email` is never present in any Loki log entry at `Information` level or above
+- [x] `UserAgent` is never present in any Loki log entry at `Information` level or above
+- [x] A unit test asserts absence of these fields using an in-memory Serilog sink
 
 ---
 
