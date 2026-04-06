@@ -284,6 +284,7 @@ Spec-kit CI fails on: missing required fields, empty acceptance criteria, invali
 - [ ] Read this `Institution.md` fully
 - [ ] Read the Spec-kit README in the repository
 - [ ] Review 2 merged spec PRs in `.specify/specs/` to understand the format
+- [ ] Read the SOLID principles section and identify one example of each in the codebase
 - [ ] Run the project locally via Docker Compose (`docker compose up`)
 - [ ] Run the full test suite (`dotnet test`) — all tests must pass before first commit
 - [ ] Pair with a teammate on your first spec authoring
