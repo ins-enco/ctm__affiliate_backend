@@ -2,7 +2,7 @@
 
 ---
 id: institution
-version: 1.1.0
+version: 1.2.0
 status: in-review
 owners:
   - tech-lead
@@ -164,6 +164,25 @@ All entities extend `BaseEntity` (`CreatedAt`, `UpdatedAt` — UTC).
 ---
 
 ## Code rules
+
+### SOLID principles
+
+**S — Single Responsibility**
+Each class has one reason to change. Services handle one business capability; controllers only route and validate input; DbContexts only own persistence for their module. A service that both sends email and calculates commissions violates this — split it.
+
+**O — Open/Closed**
+Extend behaviour through new implementations, not by editing existing ones. New cache backends implement `ICacheService`; new event handlers implement `IEventHandler<T>`. The pipeline is open to extension, closed to modification.
+
+**L — Liskov Substitution**
+Any implementation must be a safe drop-in for its interface. `MemoryCacheService` and a future `RedisCacheService` must behave identically from the caller's perspective. Integration tests substitute SQLite for MySQL — this is only valid because both honour the same EF schema contract.
+
+**I — Interface Segregation**
+Interfaces are narrow and caller-shaped. `IAffiliateLookupService` exposes only what Auth needs from Affiliate — not the full `AffiliateService` surface. Never inject a fat service interface when the caller needs one method.
+
+**D — Dependency Inversion**
+High-level modules depend on abstractions, not concretions. Services are injected as interfaces via primary constructors (`public class AuthService(IAffiliateLookupService affiliates, IEventPublisher events)`). No `new ConcreteService()` inside business logic. Verified by: all cross-module and infrastructure dependencies are interface-typed in constructors.
+
+---
 
 ### Architecture principles
 
