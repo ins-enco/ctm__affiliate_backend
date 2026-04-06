@@ -47,9 +47,10 @@ builder.Services.AddScoped<IEventPublisher, EventPublisher>();
 
 // Step 6 — Swagger
 builder.Services.AddEndpointsApiExplorer();
+var apiVersion = builder.Configuration["ApiVersion"] ?? "0.0.0-local";
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new() { Title = "CopyTrade Market API", Version = "v1" });
+    options.SwaggerDoc("v1", new() { Title = "CopyTrade Market API", Version = apiVersion });
 
     // JWT bearer support in Swagger UI
     options.AddSecurityDefinition("Bearer", new()
@@ -168,6 +169,11 @@ app.UseAuthorization();
 
 // Step 12 — Map controllers
 app.MapControllers();
+
+// Meta
+app.MapGet("/api/version", () => Results.Ok(new { version = apiVersion }))
+   .WithTags("Meta")
+   .AllowAnonymous();
 
 // Let each module map its own endpoints
 foreach (var module in modules)
