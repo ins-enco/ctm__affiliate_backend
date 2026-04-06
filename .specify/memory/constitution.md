@@ -156,9 +156,13 @@ All entities extend `BaseEntity` (`CreatedAt`, `UpdatedAt` — UTC).
 Each module owns its own DbContext, entities, and services. No module directly references another module's assembly. Cross-module needs go through `Shared` abstractions.
 Verified by: no inter-module project references in `.csproj`; cross-module calls only through injected interfaces.
 
-**P2 — Specification pattern for all queries**
-All filtered database queries use `BaseSpecification<T>` + `DbSet.Apply()`. Raw inline LINQ predicates are not permitted in service methods.
-Verified by: services call `db.{Entity}.Apply(new {Name}Specification(...))`, never `db.{Entity}.Where(x => ...)` inline.
+### Unit Tests (`*.Application.Tests`)
+- **Framework**: xUnit + Moq
+- **Database**: `UseInMemoryDatabase` with a unique `Guid` per test — never shared state.
+- **Mocking**: Only mock interfaces crossing module boundaries (`IAffiliateLookupService`, `IEventPublisher`). Never mock EF DbContext — use in-memory instead.
+- **Test naming**: `{Method}_{Condition}_{ExpectedOutcome}` (e.g., `Register_WithDuplicateEmail_ThrowsConflictException`)
+- **Structure**: Arrange / Act / Assert — one assertion focus per `[Fact]`.
+- **InMemory limitation**: EF Core InMemory does not enforce unique indexes. Never assert row counts or DB state that depends on uniqueness constraints — those are false positives in unit tests and contradictions in integration tests. Assert deterministic behavior via return values instead (e.g., compare `result1.SessionId == result2.SessionId`, not `db.ClickEvents.Count() == 2`). Duplicate-insert paths must be covered in `Integration.Tests` where SQLite enforces the schema.
 
 **P3 — Domain events for side effects**
 When an action in one module triggers a side effect in another, publish a domain event via `IEventPublisher.PublishAsync()`. No direct service-to-service calls across module boundaries.
