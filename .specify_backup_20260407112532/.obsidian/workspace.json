@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "99a43d05c3c78243",
+    "type": "split",
+    "children": [
+      {
+        "id": "9743e0bdd6d3d7a1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f93e759eef0ea46e",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a9aa0725976a949f",
+    "type": "split",
+    "children": [
+      {
+        "id": "0f6ba8b9ae12cc92",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2e43c119337f6f09",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "da88ae00bc47984f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "182257f9a58f3016",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "f0a70f6d3041795d",
+    "type": "split",
+    "children": [
+      {
+        "id": "7497f0d323c3733e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e94bf556efd1919b",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "specs/milestone-1/tasks.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for tasks"
+            }
+          },
+          {
+            "id": "74685c34586e49ca",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "specs/milestone-1/tasks.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from tasks"
+            }
+          },
+          {
+            "id": "1f4c63c720a535ca",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "11bde2cdf0e1d6d0",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "9aac4f8de284b771",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "specs/milestone-1/tasks.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of tasks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "f93e759eef0ea46e",
+  "lastOpenFiles": [
+    "specs/api-version-exposure/tasks.md",
+    "specs/api-version-exposure/spec.md",
+    "specs/api-version-exposure/plan.md",
+    "specs/api-version-exposure",
+    "specs/grafana-integrate/contracts/loki-log-schema.md",
+    "specs/grafana-integrate/tasks.md",
+    "specs/grafana-integrate/spec.md",
+    "specs/grafana-integrate/plan.md",
+    "specs/grafana-integrate/data-model.md",
+    "specs/grafana-integrate/contracts",
+    "specs/grafana-integrate",
+    "specs/validation-data/spec.md",
+    "specs/validation-data/contracts/validation-error-response.md",
+    "specs/validation-data/tasks.md",
+    "specs/validation-data/plan.md",
+    "specs/validation-data/data-model.md",
+    "specs/validation-data/contracts",
+    "specs/validation-data",
+    "specs/validation-data/spec.md.tmp.7776.1775204462299",
+    "specs/validation-data/spec.md.tmp.7776.1775204455403",
+    "memory/constitution.md",
+    "specs/grafana-integrate/contracts/loki-log-schema.md.tmp.22900.1775118065743",
+    "specs/milestone-1/spec.md",
+    "specs/uc-04-record-conversion/spec.md",
+    "specs/uc-06-auto-record-registration/tasks.md",
+    "specs/uc-05-view-dashboard/tasks.md",
+    "specs/uc-04-record-conversion/tasks.md",
+    "specs/uc-03-record-click/tasks.md",
+    "specs/uc-03-record-click/spec.md",
+    "specs/uc-02-user-login/tasks.md",
+    "specs/uc-02-user-login/spec.md",
+    "specs/uc-01-user-registration/tasks.md",
+    "specs/uc-01-user-registration/spec.md"
+  ]
+}
