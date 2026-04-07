@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Auth.Domain\Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\CopyTradeMarketApi.Shared\CopyTradeMarketApi.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -15,9 +15,9 @@
 
 **Purpose**: Config placeholders and exception type needed by all phases.
 
-- [ ] T001 Add `EmailVerification`, `MailSettings`, and `EmailTemplates` sections to `Backend/src/Host/CopyTradeMarketApi.Host/appsettings.json` (placeholders only — secrets via User Secrets / env vars)
-- [ ] T002 [P] Add `TooManyRequestsException` to `Backend/src/Shared/CopyTradeMarketApi.Shared/Exceptions/TooManyRequestsException.cs`
-- [ ] T003 [P] Map `TooManyRequestsException → 429` in `Backend/src/Host/CopyTradeMarketApi.Host/Middleware/ExceptionHandlingMiddleware.cs`
+- [x] T001 Add `EmailVerification`, `MailSettings`, and `EmailTemplates` sections to `Backend/src/Host/CopyTradeMarketApi.Host/appsettings.json` (placeholders only — secrets via User Secrets / env vars)
+- [x] T002 [P] Add `TooManyRequestsException` to `Backend/src/Shared/CopyTradeMarketApi.Shared/Exceptions/TooManyRequestsException.cs`
+- [x] T003 [P] Map `TooManyRequestsException → 429` in `Backend/src/Host/CopyTradeMarketApi.Host/Middleware/ExceptionHandlingMiddleware.cs`
 
 ---
 
@@ -27,20 +27,20 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 [P] Create `IMailService` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/IMailService.cs` — single method `Task SendAsync(MailMessage message)`
-- [ ] T005 [P] Create `MailMessage` record in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/MailMessage.cs` — `(string To, string Subject, string Body)`
-- [ ] T006 [P] Create `EmailTemplate` record in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/EmailTemplate.cs` — `(string Name, string Subject, string Body)`
-- [ ] T007 [P] Create `IEmailTemplateProvider` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/IEmailTemplateProvider.cs` — `Task<EmailTemplate?> GetTemplateAsync(string name)`
-- [ ] T008 [P] Create `IVerificationSettings` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Verification/IVerificationSettings.cs` — property `TimeSpan TokenExpiry`
-- [ ] T009 [P] Add `IsEmailVerified` bool field (default `false`) to `User` entity in `Backend/src/Modules/Auth/Auth.Domain/Entities/User.cs`
-- [ ] T010 [P] Create `EmailVerificationToken` entity in `Backend/src/Modules/Auth/Auth.Domain/Entities/EmailVerificationToken.cs` extending `BaseEntity` — fields: `UserId`, `Email`, `Token`, `ExpiresAt`, `ConsumedAt?`
-- [ ] T011 [P] Create `UserByVerificationTokenSpecification` in `Backend/src/Modules/Auth/Auth.Domain/Specifications/UserByVerificationTokenSpecification.cs`
-- [ ] T012 Add `DbSet<EmailVerificationToken> EmailVerificationTokens` to `Backend/src/Modules/Auth/Auth.Infrastructure/Persistence/AuthDbContext.cs`
-- [ ] T013 [P] Create `EmailVerificationTokenConfiguration` in `Backend/src/Modules/Auth/Auth.Infrastructure/Persistence/Configurations/EmailVerificationTokenConfiguration.cs` — unique index on `Token`, composite index on `(UserId, ConsumedAt)`, cascade delete on UserId FK
-- [ ] T014 Create EF migration `AddIsEmailVerifiedToUser` — `dotnet ef migrations add AddIsEmailVerifiedToUser --project Auth.Infrastructure --startup-project CopyTradeMarketApi.Host`
-- [ ] T015 Create EF migration `AddEmailVerificationToken` — `dotnet ef migrations add AddEmailVerificationToken --project Auth.Infrastructure --startup-project CopyTradeMarketApi.Host`
-- [ ] T016 [P] Create `AppSettingsVerificationSettings` in `Backend/src/Modules/Auth/Auth.Application/Settings/AppSettingsVerificationSettings.cs` implementing `IVerificationSettings` — reads `EmailVerification:TokenExpiryHours` (default 24)
-- [ ] T017 [P] Create `MailSettings` record in `Backend/src/Modules/Auth/Auth.Application/Settings/MailSettings.cs` — `SmtpHost`, `SmtpPort`, `SmtpUsername`, `SmtpPassword`, `FromAddress`, `FromName`, `UseSsl`
+- [x] T004 [P] Create `IMailService` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/IMailService.cs` — single method `Task SendAsync(MailMessage message)`
+- [x] T005 [P] Create `MailMessage` record in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/MailMessage.cs` — `(string To, string Subject, string Body)`
+- [x] T006 [P] Create `EmailTemplate` record in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/EmailTemplate.cs` — `(string Name, string Subject, string Body)`
+- [x] T007 [P] Create `IEmailTemplateProvider` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Mail/IEmailTemplateProvider.cs` — `Task<EmailTemplate?> GetTemplateAsync(string name)`
+- [x] T008 [P] Create `IVerificationSettings` interface in `Backend/src/Shared/CopyTradeMarketApi.Shared/Verification/IVerificationSettings.cs` — property `TimeSpan TokenExpiry`
+- [x] T009 [P] Add `IsEmailVerified` bool field (default `false`) to `User` entity in `Backend/src/Modules/Auth/Auth.Domain/Entities/User.cs`
+- [x] T010 [P] Create `EmailVerificationToken` entity in `Backend/src/Modules/Auth/Auth.Domain/Entities/EmailVerificationToken.cs` extending `BaseEntity` — fields: `UserId`, `Email`, `Token`, `ExpiresAt`, `ConsumedAt?`
+- [x] T011 [P] Create `UserByVerificationTokenSpecification` in `Backend/src/Modules/Auth/Auth.Domain/Specifications/UserByVerificationTokenSpecification.cs`
+- [x] T012 Add `DbSet<EmailVerificationToken> EmailVerificationTokens` to `Backend/src/Modules/Auth/Auth.Infrastructure/Persistence/AuthDbContext.cs`
+- [x] T013 [P] Create `EmailVerificationTokenConfiguration` in `Backend/src/Modules/Auth/Auth.Infrastructure/Persistence/Configurations/EmailVerificationTokenConfiguration.cs` — unique index on `Token`, composite index on `(UserId, ConsumedAt)`, cascade delete on UserId FK
+- [x] T014 Create EF migration `AddIsEmailVerifiedToUser` — `dotnet ef migrations add AddIsEmailVerifiedToUser --project Auth.Infrastructure --startup-project CopyTradeMarketApi.Host`
+- [x] T015 Create EF migration `AddEmailVerificationToken` — `dotnet ef migrations add AddEmailVerificationToken --project Auth.Infrastructure --startup-project CopyTradeMarketApi.Host`
+- [x] T016 [P] Create `AppSettingsVerificationSettings` in `Backend/src/Modules/Auth/Auth.Application/Settings/AppSettingsVerificationSettings.cs` implementing `IVerificationSettings` — reads `EmailVerification:TokenExpiryHours` (default 24)
+- [x] T017 [P] Create `MailSettings` record in `Backend/src/Modules/Auth/Auth.Application/Settings/MailSettings.cs` — `SmtpHost`, `SmtpPort`, `SmtpUsername`, `SmtpPassword`, `FromAddress`, `FromName`, `UseSsl`
 
 **Checkpoint**: Shared interfaces, domain entity, migrations, and settings are ready — user story phases can now begin.
 
@@ -54,21 +54,21 @@
 
 ### Implementation
 
-- [ ] T018 [P] [US1] Create `SmtpMailService` implementing `IMailService` in `Backend/src/Modules/Auth/Auth.Infrastructure/Mail/SmtpMailService.cs` — uses `MailSettings`; logs dispatch attempt, success, and failure via Serilog; catches send exceptions without rethrowing
-- [ ] T019 [P] [US1] Create `FileSystemTemplateProvider` implementing `IEmailTemplateProvider` in `Backend/src/Modules/Auth/Auth.Infrastructure/Mail/FileSystemTemplateProvider.cs` — reads `{name}.subject.txt` + `{name}.body.html` from configured `EmailTemplates:FileSystemPath`; returns `null` if files not found
-- [ ] T020 [P] [US1] Create `ITemplateResolver` interface in `Backend/src/Modules/Auth/Auth.Application/Templates/ITemplateResolver.cs` — `Task<EmailTemplate> ResolveAsync(string name)` (throws `InvalidOperationException` if all providers return null)
-- [ ] T021 [US1] Create `TemplateResolver` implementing `ITemplateResolver` in `Backend/src/Modules/Auth/Auth.Application/Templates/TemplateResolver.cs` — iterates `IEnumerable<IEmailTemplateProvider>` in order; returns first non-null result; logs which provider resolved the template
-- [ ] T022 [P] [US1] Create `VerificationEmailContext` record in `Backend/src/Modules/Auth/Auth.Application/Templates/VerificationEmailContext.cs` — `(string RecipientName, string VerificationLink, string ExpiryDescription)`; add `RenderTemplate(EmailTemplate, VerificationEmailContext)` helper that substitutes `{{RecipientName}}`, `{{VerificationLink}}`, `{{ExpiryDescription}}`
-- [ ] T023 [P] [US1] Add `IVerificationService` interface to `Backend/src/Modules/Auth/Auth.Application/Services/IVerificationService.cs` — methods: `Task<string> CreateTokenAsync(int userId, string email)`, `Task VerifyAsync(string token)`
-- [ ] T024 [US1] Implement `VerificationService.CreateTokenAsync` and `VerifyAsync` in `Backend/src/Modules/Auth/Auth.Application/Services/VerificationService.cs` — token: URL-safe Base64 of 64 random bytes; expiry from `IVerificationSettings.TokenExpiry`; `VerifyAsync` throws `InvalidOperationException` on expired/consumed token, `ConflictException` on already-verified user
-- [ ] T025 [P] [US1] Create email template files `email-verification.subject.txt` and `email-verification.body.html` in `Backend/templates/email/` (create directory) with `{{RecipientName}}`, `{{VerificationLink}}`, `{{ExpiryDescription}}` placeholders
-- [ ] T026 [US1] Create `EmailVerificationEventHandler` implementing `IEventHandler<UserRegisteredEvent>` in `Backend/src/Modules/Auth/Auth.Application/EventHandlers/EmailVerificationEventHandler.cs` — loads user by `UserId`, calls `IVerificationService.CreateTokenAsync`, resolves template, renders with `VerificationEmailContext`, calls `IMailService.SendAsync`; wraps entire dispatch in try/catch — logs failure, does NOT rethrow
-- [ ] T027 [P] [US1] Add `VerifyEmailRequest` record to `Backend/src/Modules/Auth/Auth.Application/DTOs/VerifyEmailRequest.cs`
-- [ ] T028 [US1] Add `VerifyEmailAsync` to `IAuthService` in `Backend/src/Modules/Auth/Auth.Application/Services/IAuthService.cs` and implement in `AuthService.cs` delegating to `IVerificationService.VerifyAsync`
-- [ ] T029 [US1] Add `POST /api/auth/verify-email` endpoint to `Backend/src/Modules/Auth/Auth.API/Controllers/AuthController.cs` — accepts `VerifyEmailRequest`; returns `200 OK` on success; ProblemDetails on failure via existing middleware
-- [ ] T030 [US1] Register US1 services in `Backend/src/Modules/Auth/Auth.API/AuthModule.cs` — `IVerificationSettings → AppSettingsVerificationSettings` (singleton), `IMailService → SmtpMailService` (scoped), `IEmailTemplateProvider → FileSystemTemplateProvider` (scoped), `ITemplateResolver → TemplateResolver` (scoped), `IVerificationService → VerificationService` (scoped), `IEventHandler<UserRegisteredEvent> → EmailVerificationEventHandler` (scoped, add alongside existing `UserRegisteredEventHandler`)
-- [ ] T031 [US1] Write unit tests for `VerificationService` (`CreateTokenAsync`, `VerifyAsync` — valid/expired/consumed/already-verified) in `Backend/tests/Auth.Application.Tests/VerificationServiceTests.cs`
-- [ ] T032 [US1] Write unit tests for `EmailVerificationEventHandler` (happy path dispatch; mail service throws — no rethrow; template not found — logs error, no rethrow) in `Backend/tests/Auth.Application.Tests/EmailVerificationEventHandlerTests.cs`
+- [x] T018 [P] [US1] Create `SmtpMailService` implementing `IMailService` in `Backend/src/Modules/Auth/Auth.Infrastructure/Mail/SmtpMailService.cs` — uses `MailSettings`; logs dispatch attempt, success, and failure via Serilog; catches send exceptions without rethrowing
+- [x] T019 [P] [US1] Create `FileSystemTemplateProvider` implementing `IEmailTemplateProvider` in `Backend/src/Modules/Auth/Auth.Infrastructure/Mail/FileSystemTemplateProvider.cs` — reads `{name}.subject.txt` + `{name}.body.html` from configured `EmailTemplates:FileSystemPath`; returns `null` if files not found
+- [x] T020 [P] [US1] Create `ITemplateResolver` interface in `Backend/src/Modules/Auth/Auth.Application/Templates/ITemplateResolver.cs` — `Task<EmailTemplate> ResolveAsync(string name)` (throws `InvalidOperationException` if all providers return null)
+- [x] T021 [US1] Create `TemplateResolver` implementing `ITemplateResolver` in `Backend/src/Modules/Auth/Auth.Application/Templates/TemplateResolver.cs` — iterates `IEnumerable<IEmailTemplateProvider>` in order; returns first non-null result; logs which provider resolved the template
+- [x] T022 [P] [US1] Create `VerificationEmailContext` record in `Backend/src/Modules/Auth/Auth.Application/Templates/VerificationEmailContext.cs` — `(string RecipientName, string VerificationLink, string ExpiryDescription)`; add `RenderTemplate(EmailTemplate, VerificationEmailContext)` helper that substitutes `{{RecipientName}}`, `{{VerificationLink}}`, `{{ExpiryDescription}}`
+- [x] T023 [P] [US1] Add `IVerificationService` interface to `Backend/src/Modules/Auth/Auth.Application/Services/IVerificationService.cs` — methods: `Task<string> CreateTokenAsync(int userId, string email)`, `Task VerifyAsync(string token)`
+- [x] T024 [US1] Implement `VerificationService.CreateTokenAsync` and `VerifyAsync` in `Backend/src/Modules/Auth/Auth.Application/Services/VerificationService.cs` — token: URL-safe Base64 of 64 random bytes; expiry from `IVerificationSettings.TokenExpiry`; `VerifyAsync` throws `InvalidOperationException` on expired/consumed token, `ConflictException` on already-verified user
+- [x] T025 [P] [US1] Create email template files `email-verification.subject.txt` and `email-verification.body.html` in `Backend/templates/email/` (create directory) with `{{RecipientName}}`, `{{VerificationLink}}`, `{{ExpiryDescription}}` placeholders
+- [x] T026 [US1] Create `EmailVerificationEventHandler` implementing `IEventHandler<UserRegisteredEvent>` in `Backend/src/Modules/Auth/Auth.Application/EventHandlers/EmailVerificationEventHandler.cs` — loads user by `UserId`, calls `IVerificationService.CreateTokenAsync`, resolves template, renders with `VerificationEmailContext`, calls `IMailService.SendAsync`; wraps entire dispatch in try/catch — logs failure, does NOT rethrow
+- [x] T027 [P] [US1] Add `VerifyEmailRequest` record to `Backend/src/Modules/Auth/Auth.Application/DTOs/VerifyEmailRequest.cs`
+- [x] T028 [US1] Add `VerifyEmailAsync` to `IAuthService` in `Backend/src/Modules/Auth/Auth.Application/Services/IAuthService.cs` and implement in `AuthService.cs` delegating to `IVerificationService.VerifyAsync`
+- [x] T029 [US1] Add `POST /api/auth/verify-email` endpoint to `Backend/src/Modules/Auth/Auth.API/Controllers/AuthController.cs` — accepts `VerifyEmailRequest`; returns `200 OK` on success; ProblemDetails on failure via existing middleware
+- [x] T030 [US1] Register US1 services in `Backend/src/Modules/Auth/Auth.API/AuthModule.cs` — `IVerificationSettings → AppSettingsVerificationSettings` (singleton), `IMailService → SmtpMailService` (scoped), `IEmailTemplateProvider → FileSystemTemplateProvider` (scoped), `ITemplateResolver → TemplateResolver` (scoped), `IVerificationService → VerificationService` (scoped), `IEventHandler<UserRegisteredEvent> → EmailVerificationEventHandler` (scoped, add alongside existing `UserRegisteredEventHandler`)
+- [x] T031 [US1] Write unit tests for `VerificationService` (`CreateTokenAsync`, `VerifyAsync` — valid/expired/consumed/already-verified) in `Backend/tests/Auth.Application.Tests/VerificationServiceTests.cs`
+- [x] T032 [US1] Write unit tests for `EmailVerificationEventHandler` (happy path dispatch; mail service throws — no rethrow; template not found — logs error, no rethrow) in `Backend/tests/Auth.Application.Tests/EmailVerificationEventHandlerTests.cs`
 - [ ] T033 [US1] Write integration tests for `POST /api/auth/verify-email` (valid token → 200 + `IsEmailVerified = true`; expired token → 410; consumed token → 410; already verified → 409) in `Backend/tests/Integration.Tests/AuthVerificationIntegrationTests.cs`
 
 **Checkpoint**: Register a user → verification email dispatched (or logged if SMTP not configured) → `POST /api/auth/verify-email` with the token → user is verified. US1 fully functional.
