@@ -255,6 +255,10 @@ All errors surface as RFC 7807 ProblemDetails via `ExceptionHandlingMiddleware`.
 
 ## Spec conventions
 
+### Branch naming
+
+All feature branches **must** use the `feature/` prefix: `feature/{number}-{short-name}` (e.g., `feature/002-email-verification-service`). The number is zero-padded to 3 digits and auto-assigned by Spec-kit. After running `speckit.specify`, verify the branch was created with the `feature/` prefix — if not, rename it with `git branch -m {old} feature/{old}`.
+
 All specs live under `.specify/specs/{feature}/`. Required files per feature:
 
 ```
