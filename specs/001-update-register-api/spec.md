@@ -116,8 +116,9 @@ present and verify the conversion event is still attributed correctly.
 - **FR-001**: System MUST accept `FirstName` and `LastName` as separate required fields
   in the registration request, replacing the single `Name` field.
 
-- **FR-002**: System MUST accept `PhoneNumber` as a required field and validate it
-  against a recognised international phone number format before persisting.
+- **FR-002**: System MUST accept `PhoneCode` (country dial code, e.g. `+84`, `+1`) and
+  `PhoneNumber` (local subscriber number without country code) as two separate required fields.
+  Both are validated and stored independently.
 
 - **FR-003**: System MUST accept `Language` as a required field representing the user's
   preferred language, validated as a well-formed language code (e.g. BCP 47 / ISO 639-1).

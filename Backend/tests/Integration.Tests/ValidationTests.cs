@@ -29,9 +29,9 @@ public class ValidationTests : IClassFixture<IntegrationWebFactory>
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
 
         var errors = await ReadErrors(resp);
-        Assert.True(errors.ContainsKey("name")     || errors.ContainsKey("Name"),     "Missing 'name' error");
-        Assert.True(errors.ContainsKey("email")    || errors.ContainsKey("Email"),    "Missing 'email' error");
-        Assert.True(errors.ContainsKey("password") || errors.ContainsKey("Password"), "Missing 'password' error");
+        Assert.True(errors.ContainsKey("userInformation") || errors.ContainsKey("UserInformation"), "Missing 'userInformation' error");
+        Assert.True(errors.ContainsKey("password")        || errors.ContainsKey("Password"),        "Missing 'password' error");
+        Assert.True(errors.ContainsKey("confirmPassword") || errors.ContainsKey("ConfirmPassword"), "Missing 'confirmPassword' error");
     }
 
     [Theory]
@@ -44,15 +44,23 @@ public class ValidationTests : IClassFixture<IntegrationWebFactory>
     {
         var resp = await _client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Test User",
-            email    = badEmail,
-            password = "ValidPass1!"
+            userInformation = new
+            {
+                firstName   = "Test",
+                lastName    = "User",
+                email       = badEmail,
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "ValidPass1!",
+            confirmPassword = "ValidPass1!"
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
 
         var errors = await ReadErrors(resp);
-        Assert.True(errors.ContainsKey("email") || errors.ContainsKey("Email"),
+        Assert.True(errors.ContainsKey("UserInformation.Email") || errors.ContainsKey("userInformation.email"),
             $"Expected email error for input '{badEmail}'");
     }
 
@@ -61,9 +69,17 @@ public class ValidationTests : IClassFixture<IntegrationWebFactory>
     {
         var resp = await _client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Test User",
-            email    = "valid@test.com",
-            password = "weak"
+            userInformation = new
+            {
+                firstName   = "Test",
+                lastName    = "User",
+                email       = "valid@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "weak",
+            confirmPassword = "weak"
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
@@ -90,9 +106,17 @@ public class ValidationTests : IClassFixture<IntegrationWebFactory>
     {
         var resp = await _client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Validation User",
-            email    = "validation.user@test.com",
-            password = "ValidPass1!"
+            userInformation = new
+            {
+                firstName   = "Validation",
+                lastName    = "User",
+                email       = "validation.user@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "ValidPass1!",
+            confirmPassword = "ValidPass1!"
         });
 
         Assert.Equal(HttpStatusCode.Created, resp.StatusCode);

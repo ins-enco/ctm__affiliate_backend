@@ -5,15 +5,22 @@
 
 ---
 
-## Decision 1: PhoneNumber validation approach
+## Decision 1: Phone validation — split into PhoneCode + PhoneNumber
 
-**Decision**: Use a custom `[PhoneField]` data annotation attribute following the same pattern as `[PasswordField]` and `[StrictEmailField]` in `CopyTradeMarketApi.Shared.Validation`. Validate E.164 format (`^\+?[1-9]\d{6,14}$`) which covers international numbers with optional leading `+`.
+**Decision**: Two separate custom attributes in `CopyTradeMarketApi.Shared.Validation`:
+- `PhoneCodeFieldAttribute` — validates country dial code (`^\+[1-9]\d{0,3}$`, e.g. `+84`, `+1`)
+- `PhoneNumberFieldAttribute` — validates local subscriber number (`^\d{5,15}$`, digits only)
 
-**Rationale**: Consistent with existing validation pattern. No external library dependency needed. E.164 is the standard used by most international telecom systems and accepted by frontend libraries.
+Stored as two separate columns in `user_information`.
+
+**Rationale**: Separating dial code from local number avoids ambiguity in parsing, enables
+country-aware display formatting on the frontend, and is consistent with how phone numbers
+are collected in international registration forms. Single E.164 validation was considered but
+rejected because it makes server-side formatting/display harder and doesn't match common UX patterns.
 
 **Alternatives considered**:
-- libphonenumber-csharp: Full carrier/region validation but 2MB+ dependency for simple format check — overkill.
-- FluentValidation: Not in use in this project; introducing it for one field violates SOLID O and adds stack inconsistency.
+- Single E.164 field (`+84901234567`): Simpler but harder to display/format per country on FE.
+- libphonenumber-csharp: Full carrier/region validation — 2MB+ dependency, overkill for format check.
 
 ---
 
@@ -84,19 +91,23 @@ public record RegisterRequest : IValidatableObject
 
 ---
 
-## Decision 6: `User` entity — new fields
+## Decision 6: Separate `user_information` table (not flat on `users`)
 
-**Decision**: Add `FirstName`, `LastName`, `PhoneNumber`, `Language` directly to `User` entity (flat). All required, no nullable.
+**Decision**: Create a new `UserInformation` entity and `user_information` table in a 1-to-1
+relationship with `users`. Personal data (`FirstName`, `LastName`, `PhoneCode`, `PhoneNumber`,
+`Language`) lives in `user_information`. The `users` table stores credentials only
+(`Email`, `PasswordHash`).
 
-**Rationale**: The spec states "persistence layer may store fields flat on the User entity." These are first-class identity attributes. No separate profile table is needed at this stage — premature normalisation given the current module scope.
+**Rationale**: Clean separation of concerns — credentials belong to the authentication domain,
+personal identity data is a profile concern. This makes it easier to apply different access
+controls, retention policies, or encryption requirements to each table independently. The Auth
+module owns both tables in `AuthDbContext`, so this is not a cross-module concern.
 
-**EF Configuration additions** (in `UserConfiguration`):
-- `FirstName`: `varchar(50)`, required
-- `LastName`: `varchar(50)`, required
-- `PhoneNumber`: `varchar(20)`, required
-- `Language`: `varchar(10)`, required
+**EF setup**: `UserInformationConfiguration` — table `user_information`, `UserId` FK with
+unique index (enforces 1-to-1), cascade delete. Migration `AddUserInformationTable`.
 
-**Migration**: New migration `AddUserProfileFields` — additive only (new columns with defaults for existing rows).
+**Alternatives considered**:
+- Flat columns on `users`: Simpler but mixes credential and profile concerns in one table.
 
 ---
 

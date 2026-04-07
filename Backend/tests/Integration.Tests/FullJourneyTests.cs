@@ -20,14 +20,33 @@ public class FullJourneyTests : IClassFixture<IntegrationWebFactory>
         // ── Step 1: Register ──────────────────────────────────────────────────
         var registerResp = await _client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Journey User",
-            email    = "journey@test.com",
-            password = "JourneyPass1!"
+            userInformation = new
+            {
+                firstName   = "Journey",
+                lastName    = "User",
+                email       = "journey@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "JourneyPass1!",
+            confirmPassword = "JourneyPass1!"
         });
 
         Assert.Equal(HttpStatusCode.Created, registerResp.StatusCode);
 
-        var authResult = await registerResp.Content.ReadFromJsonAsync<AuthResult>();
+        var registerResult = await registerResp.Content.ReadFromJsonAsync<RegisterResult>();
+        Assert.NotNull(registerResult);
+        Assert.True(registerResult!.UserId > 0);
+
+        // Login to obtain a JWT
+        var loginResp = await _client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email    = "journey@test.com",
+            password = "JourneyPass1!"
+        });
+        Assert.Equal(HttpStatusCode.OK, loginResp.StatusCode);
+        var authResult = await loginResp.Content.ReadFromJsonAsync<AuthResult>();
         Assert.NotNull(authResult);
         Assert.NotEmpty(authResult!.Token);
         Assert.True(authResult.AffiliateId > 0);
@@ -94,7 +113,20 @@ public class FullJourneyTests : IClassFixture<IntegrationWebFactory>
     [Fact]
     public async Task Register_DuplicateEmail_Returns409()
     {
-        var payload = new { name = "Alice", email = "alice-dup@test.com", password = "Pass123!" };
+        var payload = new
+        {
+            userInformation = new
+            {
+                firstName   = "Alice",
+                lastName    = "Dup",
+                email       = "alice-dup@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "en"
+            },
+            password        = "Pass123!",
+            confirmPassword = "Pass123!"
+        };
         await _client.PostAsJsonAsync("/api/auth/register", payload);
 
         var resp = await _client.PostAsJsonAsync("/api/auth/register", payload);

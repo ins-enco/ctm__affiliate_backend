@@ -1,11 +1,15 @@
-using CopyTradeMarketApi.Shared.Validation;
-
 namespace Auth.Application.DTOs;
 
-public record RegisterRequest
+public record RegisterRequest : IValidatableObject
 {
-    [Required][MaxLength(100)]   public string Name { get; init; } = null!;
-    [Required][StrictEmailField] public string Email { get; init; } = null!;
-    [Required][PasswordField]    public string Password { get; init; } = null!;
+    [Required] public UserInformationDto UserInformation { get; init; } = null!;
+    [Required][PasswordField] public string Password { get; init; } = null!;
+    [Required] public string ConfirmPassword { get; init; } = null!;
     public string? SessionId { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Password != null && ConfirmPassword != null && Password != ConfirmPassword)
+            yield return new ValidationResult("Passwords do not match.", new[] { "ConfirmPassword" });
+    }
 }

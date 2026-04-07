@@ -7,3 +7,5 @@ global using CopyTradeMarketApi.Shared.Abstractions;
 global using Microsoft.Extensions.Caching.Memory;
 global using System.Text.Json;
 global using Microsoft.Extensions.Caching.Distributed;
+global using System.ComponentModel.DataAnnotations;
+global using System.Text.RegularExpressions;

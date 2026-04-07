@@ -19,7 +19,8 @@
     "firstName": "Nguyen",
     "lastName": "Nam",
     "email": "nam@example.com",
-    "phoneNumber": "+84901234567",
+    "phoneCode": "+84",
+    "phoneNumber": "901234567",
     "language": "vi"
   },
   "password": "Secure@123",
@@ -37,7 +38,8 @@
 | `userInformation.firstName` | yes | max 50 chars |
 | `userInformation.lastName` | yes | max 50 chars |
 | `userInformation.email` | yes | valid email format; must be unique |
-| `userInformation.phoneNumber` | yes | E.164 format e.g. `+84901234567` |
+| `userInformation.phoneCode` | yes | Country dial code e.g. `+84`, `+1` |
+| `userInformation.phoneNumber` | yes | Local subscriber number, digits only e.g. `901234567` |
 | `userInformation.language` | yes | BCP 47 code e.g. `en`, `vi`, `en-US` |
 | `password` | yes | min 8 chars, uppercase, digit, special char |
 | `confirmPassword` | yes | must exactly match `password` |
@@ -66,7 +68,8 @@
   "title": "One or more validation errors occurred.",
   "status": 400,
   "errors": {
-    "UserInformation.PhoneNumber": ["PhoneNumber must be a valid international phone number."],
+    "UserInformation.PhoneCode": ["PhoneCode must be a valid country dial code (e.g. '+84', '+1')."],
+    "UserInformation.PhoneNumber": ["PhoneNumber must be a valid local phone number (digits only, no country code)."],
     "ConfirmPassword": ["Passwords do not match."]
   }
 }
@@ -92,7 +95,8 @@
 | `name` (root) | Removed. Replaced by `userInformation.firstName` + `userInformation.lastName` |
 | `email` (root) | Moved to `userInformation.email` |
 | `password` (root) | Unchanged (stays at root) |
-| — | `userInformation.phoneNumber` (new, required) |
+| — | `userInformation.phoneCode` (new, required — country dial code e.g. `+84`) |
+| — | `userInformation.phoneNumber` (new, required — local number e.g. `901234567`) |
 | — | `userInformation.language` (new, required) |
 | — | `confirmPassword` (new, required) |
 | Response: `token`, `expiresAt`, `affiliateId` | Removed. Response is now `{ userId, email }` only. Use `POST /api/auth/login` to obtain a JWT. |

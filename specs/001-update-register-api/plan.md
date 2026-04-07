@@ -7,11 +7,12 @@
 
 ## Summary
 
-Extend the `POST /api/auth/register` endpoint and `users` database table to capture a richer
-user profile: split `Name` into `FirstName` + `LastName`, add `PhoneNumber` and `Language`,
-group profile fields under a `UserInformation` nested DTO, and enforce `ConfirmPassword`
-validation server-side. All changes are confined to the Auth module and the Shared validation
-library. The Affiliate module is untouched.
+Extend the `POST /api/auth/register` endpoint to capture a richer user profile. Personal data
+is separated from credentials: a new `user_information` table stores `FirstName`, `LastName`,
+`PhoneCode`, `PhoneNumber`, and `Language` in a 1-to-1 relationship with `users`. The request
+body groups profile fields under a `UserInformation` nested DTO and enforces `ConfirmPassword`
+server-side. Register returns `{ userId, email }` — no JWT. All changes are confined to the
+Auth module and the Shared validation library. The Affiliate module is untouched.
 
 ---
 
@@ -25,7 +26,7 @@ library. The Affiliate module is untouched.
 **Project Type**: Modular monolith web service — Auth module
 **Performance Goals**: Standard web API — no change from baseline
 **Constraints**: `ConfirmPassword` must be validated before any DB write; no new external dependencies
-**Scale/Scope**: Single `users` table migration; one new EF migration; no cross-module schema changes
+**Scale/Scope**: `users` table unchanged; new `user_information` table via one additive EF migration; no cross-module schema changes
 
 ---
 
@@ -71,13 +72,14 @@ specs/001-update-register-api/
 Backend/src/
 ├── CopyTradeMarketApi.Shared/
 │   └── Validation/
-│       ├── PhoneFieldAttribute.cs          NEW
+│       ├── PhoneFieldAttribute.cs          NEW  (PhoneCodeFieldAttribute + PhoneNumberFieldAttribute)
 │       └── LanguageFieldAttribute.cs       NEW
 │
 └── Modules/Auth/
     ├── Auth.Domain/
     │   └── Entities/
-    │       └── User.cs                     MODIFY  (add 4 fields)
+    │       ├── User.cs                     MODIFY  (add navigation: UserInformation? Information)
+    │       └── UserInformation.cs          NEW     (FirstName, LastName, PhoneCode, PhoneNumber, Language, UserId FK)
     │
     ├── Auth.Application/
     │   ├── DTOs/
@@ -88,10 +90,12 @@ Backend/src/
     │
     └── Auth.Infrastructure/
         ├── Persistence/
+        │   ├── AuthDbContext.cs             MODIFY  (add UserInformation DbSet)
         │   ├── Configurations/
-        │   │   └── UserConfiguration.cs    MODIFY  (add 4 column configs)
+        │   │   ├── UserConfiguration.cs     unchanged
+        │   │   └── UserInformationConfiguration.cs  NEW (1-to-1 FK, table user_information)
         │   └── Migrations/
-        │       └── <timestamp>_AddUserProfileFields.cs   NEW (EF migration)
+        │       └── <timestamp>_AddUserInformationTable.cs  NEW (EF migration)
         └── (snapshot auto-updated by EF tooling)
 
 Backend/tests/
@@ -115,26 +119,35 @@ No constitution violations. No complexity justification required.
 
 ### Phase 0: Shared Validation Attributes
 
-Add two new custom attributes to `CopyTradeMarketApi.Shared.Validation` following the exact
-pattern of the existing `PasswordFieldAttribute` and `StrictEmailFieldAttribute`.
+Add to `CopyTradeMarketApi.Shared.Validation`:
 
-- `PhoneFieldAttribute.cs` — regex `^\+?[1-9]\d{6,14}$`
+- `PhoneFieldAttribute.cs` — two classes: `PhoneCodeFieldAttribute` (regex `^\+[1-9]\d{0,3}$`)
+  and `PhoneNumberFieldAttribute` (regex `^\d{5,15}$`)
 - `LanguageFieldAttribute.cs` — regex `^[a-z]{2}(-[A-Z]{2})?$`
 
 ---
 
-### Phase 1: Domain — User Entity
+### Phase 1: Domain — Entities
 
-Extend `User.cs` with four new required string properties:
-`FirstName`, `LastName`, `PhoneNumber`, `Language`.
+- `User.cs` — add navigation property `UserInformation? Information`
+- `UserInformation.cs` (new entity) — `Id`, `UserId` (FK), `FirstName`, `LastName`,
+  `PhoneCode`, `PhoneNumber`, `Language`, nav back to `User`
 
 ---
 
 ### Phase 2: Infrastructure — EF Configuration + Migration
 
-1. Update `UserConfiguration.cs` — add four property configurations:
-   - `FirstName`: `varchar(50)`, required
-   - `LastName`: `varchar(50)`, required
+1. `UserInformationConfiguration.cs` (new) — table `user_information`, 1-to-1 FK on `UserId`,
+   unique index on `UserId`, cascade delete, all string columns with max lengths
+2. `AuthDbContext.cs` — add `DbSet<UserInformation> UserInformation`
+3. Migration `AddUserInformationTable` — new table only, `users` unchanged; columns added with
+   no default required (table is new)
+
+---
+
+### Phase 2 (continued): Infrastructure
+
+1. `UserConfiguration.cs` — no changes needed
    - `PhoneNumber`: `varchar(20)`, required
    - `Language`: `varchar(10)`, required
 
