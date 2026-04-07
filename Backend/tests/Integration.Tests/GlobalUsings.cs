@@ -26,4 +26,5 @@ global using Auth.Domain.Entities;
 global using Tracking.Domain.Entities;
 global using AffiliateEntity = Affiliate.Domain.Entities.Affiliate;
 global using System.Text.Json;
+global using CopyTradeMarketApi.Shared.Abstractions;
 

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Integration.Tests;
 
 /// <summary>
@@ -25,13 +23,27 @@ public class ObserverPatternTests : IClassFixture<IntegrationWebFactory>
         // ── Step 1: Affiliate registers and gets their referral code ──────────
         var affiliateResp = await client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Observer Affiliate",
-            email    = "obs-affiliate@test.com",
-            password = "AffPass123!"
+            userInformation = new
+            {
+                firstName   = "Observer",
+                lastName    = "Affiliate",
+                email       = "obs-affiliate@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "AffPass123!",
+            confirmPassword = "AffPass123!"
         });
         Assert.Equal(HttpStatusCode.Created, affiliateResp.StatusCode);
 
-        var affiliateAuth = await affiliateResp.Content.ReadFromJsonAsync<AuthResult>();
+        // Login to get JWT for dashboard access
+        var loginResp = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email    = "obs-affiliate@test.com",
+            password = "AffPass123!"
+        });
+        var affiliateAuth = await loginResp.Content.ReadFromJsonAsync<AuthResult>();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", affiliateAuth!.Token);
 
@@ -53,9 +65,17 @@ public class ObserverPatternTests : IClassFixture<IntegrationWebFactory>
         registerRequest.Headers.Add("Cookie", $"aff_sid={sessionId}");
         registerRequest.Content = JsonContent.Create(new
         {
-            name     = "Observer Visitor",
-            email    = "obs-visitor@test.com",
-            password = "VisPass123!"
+            userInformation = new
+            {
+                firstName   = "Observer",
+                lastName    = "Visitor",
+                email       = "obs-visitor@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "VisPass123!",
+            confirmPassword = "VisPass123!"
         });
 
         var registerResp = await client.SendAsync(registerRequest);
@@ -86,9 +106,17 @@ public class ObserverPatternTests : IClassFixture<IntegrationWebFactory>
         // ── Register (no cookie) ──────────────────────────────────────────────
         var registerResp = await client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "No-Cookie Visitor",
-            email    = "nocookie-visitor@test.com",
-            password = "VisPass123!"
+            userInformation = new
+            {
+                firstName   = "NoCookie",
+                lastName    = "Visitor",
+                email       = "nocookie-visitor@test.com",
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "VisPass123!",
+            confirmPassword = "VisPass123!"
         });
         Assert.Equal(HttpStatusCode.Created, registerResp.StatusCode);
 

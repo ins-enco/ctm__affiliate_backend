@@ -6,24 +6,33 @@ public class AuthService(
     JwtSettings jwtSettings,
     IEventPublisher eventPublisher) : IAuthService
 {
-    public async Task<AuthResult> RegisterAsync(RegisterRequest request)
+    public async Task<RegisterResult> RegisterAsync(RegisterRequest request)
     {
-        if (await db.Users.Apply(new UserByEmailSpecification(request.Email)).AnyAsync())
+        if (await db.Users.Apply(new UserByEmailSpecification(request.UserInformation.Email)).AnyAsync())
             throw new ConflictException("Email already registered.");
 
         var user = new User
         {
-            Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
+            Email        = request.UserInformation.Email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Information  = new UserInformation
+            {
+                FirstName   = request.UserInformation.FirstName,
+                LastName    = request.UserInformation.LastName,
+                PhoneCode   = request.UserInformation.PhoneCode,
+                PhoneNumber = request.UserInformation.PhoneNumber,
+                Language    = request.UserInformation.Language
+            }
         };
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var (affiliateId, _) = await affiliateLookup.CreateAffiliateAsync(user.Id, request.Name);
+        var fullName = $"{request.UserInformation.FirstName} {request.UserInformation.LastName}";
+        await affiliateLookup.CreateAffiliateAsync(user.Id, fullName);
 
         await eventPublisher.PublishAsync(new UserRegisteredEvent(user.Id, request.SessionId));
 
-        return BuildToken(user.Id, affiliateId);
+        return new RegisterResult(user.Id, user.Email);
     }
 
     public async Task<AuthResult> LoginAsync(LoginRequest request)

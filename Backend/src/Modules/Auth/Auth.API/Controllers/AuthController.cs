@@ -5,7 +5,7 @@ namespace Auth.API.Controllers;
 public class AuthController(IAuthService authService, IConfiguration configuration) : ControllerBase
 {
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(RegisterResult), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {

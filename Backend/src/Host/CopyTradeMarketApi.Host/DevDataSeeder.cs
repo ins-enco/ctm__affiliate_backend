@@ -12,13 +12,13 @@ public static class DevDataSeeder
 
     private static readonly DevAccount[] Accounts =
     [
-        new(Id: 1, Name: "Alice Dev",  Email: "alice@dev.com",  Code: "ALICE001",
+        new(Id: 1, FirstName: "Alice", LastName: "Dev",   Email: "alice@dev.com",  PhoneCode: "+84", PhoneNumber: "901000001", Language: "vi", Code: "ALICE001",
             Description: "Active affiliate — many clicks and conversions"),
 
-        new(Id: 2, Name: "Bob Dev",    Email: "bob@dev.com",    Code: "BOB00001",
+        new(Id: 2, FirstName: "Bob",   LastName: "Dev",   Email: "bob@dev.com",    PhoneCode: "+1",  PhoneNumber: "2025550001", Language: "en", Code: "BOB00001",
             Description: "Moderate affiliate — a few clicks, no conversions"),
 
-        new(Id: 3, Name: "Carol Dev",  Email: "carol@dev.com",  Code: "CAROL001",
+        new(Id: 3, FirstName: "Carol", LastName: "Dev",   Email: "carol@dev.com",  PhoneCode: "+44", PhoneNumber: "7700900001", Language: "en", Code: "CAROL001",
             Description: "New affiliate — empty stats"),
     ];
 
@@ -61,6 +61,16 @@ public static class DevDataSeeder
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(SharedPassword),
             CreatedAt    = DateTime.UtcNow,
             UpdatedAt    = DateTime.UtcNow,
+            Information  = new UserInformation
+            {
+                FirstName   = account.FirstName,
+                LastName    = account.LastName,
+                PhoneCode   = account.PhoneCode,
+                PhoneNumber = account.PhoneNumber,
+                Language    = account.Language,
+                CreatedAt   = DateTime.UtcNow,
+                UpdatedAt   = DateTime.UtcNow,
+            }
         });
         await authDb.SaveChangesAsync();
 
@@ -68,7 +78,7 @@ public static class DevDataSeeder
         {
             Id         = account.Id,
             UserId     = account.Id,
-            Name       = account.Name,
+            Name       = $"{account.FirstName} {account.LastName}",
             UniqueCode = account.Code,
             CreatedAt  = DateTime.UtcNow,
             UpdatedAt  = DateTime.UtcNow,
@@ -144,5 +154,6 @@ public static class DevDataSeeder
             UpdatedAt      = DateTime.UtcNow,
         };
 
-    private record DevAccount(int Id, string Name, string Email, string Code, string Description);
+    private record DevAccount(int Id, string FirstName, string LastName, string Email,
+        string PhoneCode, string PhoneNumber, string Language, string Code, string Description);
 }

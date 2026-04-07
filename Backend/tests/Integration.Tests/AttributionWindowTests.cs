@@ -62,13 +62,29 @@ public class AttributionWindowTests : IClassFixture<AttributionWindowFactory>
     private async Task<string> CreateAffiliateCodeAsync()
     {
         using var client = _factory.CreateClient();
+        var email = $"attr_{Guid.NewGuid():N}@test.com";
         var reg = await client.PostAsJsonAsync("/api/auth/register", new
         {
-            name     = "Attr Test",
-            email    = $"attr_{Guid.NewGuid():N}@test.com",
+            userInformation = new
+            {
+                firstName   = "Attr",
+                lastName    = "Test",
+                email       = email,
+                phoneCode   = "+84",
+                phoneNumber = "901234567",
+                language    = "vi"
+            },
+            password        = "AttrPass1!",
+            confirmPassword = "AttrPass1!"
+        });
+        Assert.Equal(HttpStatusCode.Created, reg.StatusCode);
+
+        var loginResp = await client.PostAsJsonAsync("/api/auth/login", new
+        {
+            email    = email,
             password = "AttrPass1!"
         });
-        var auth = await reg.Content.ReadFromJsonAsync<AuthResult>();
+        var auth = await loginResp.Content.ReadFromJsonAsync<AuthResult>();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", auth!.Token);
         var dash = await client.GetFromJsonAsync<DashboardResult>("/api/affiliate/dashboard");
