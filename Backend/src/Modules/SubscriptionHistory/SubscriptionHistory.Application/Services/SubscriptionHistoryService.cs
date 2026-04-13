@@ -2,6 +2,9 @@ namespace SubscriptionHistory.Application.Services;
 
 public class SubscriptionHistoryService : ISubscriptionHistoryService
 {
+    private static readonly HashSet<string> AllowedOrderByFields =
+    ["timestamp", "clientName", "accountNumber", "strategyName", "equityConnect"];
+
     private static readonly IReadOnlyList<SubscriptionHistoryItem> MockedData =
     [
         new(new DateTime(2026, 4, 13, 10, 30, 0), "Alice Tran",   "ACC-001", "Alpha Growth",    12500.00m, null,      "Subscribe"),
@@ -26,7 +29,12 @@ public class SubscriptionHistoryService : ISubscriptionHistoryService
         new(new DateTime(2026, 4, 03, 14, 00, 0), "Frank Vu",     "ACC-006", "Beta Momentum",   6100.00m,  6200.00m,  "Unsubscribe"),
     ];
 
-    public Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize)
+    public Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(
+        int? page,
+        int? pageSize,
+        string? query = null,
+        string? orderBy = null,
+        string? orderDirection = null)
     {
         // Guard: invalid pagination values
         if (page.HasValue && page.Value < 1)
@@ -35,18 +43,64 @@ public class SubscriptionHistoryService : ISubscriptionHistoryService
         if (pageSize.HasValue && pageSize.Value < 1)
             throw new ArgumentException("Page size must be greater than 0.", nameof(pageSize));
 
+        var resolvedOrderBy = string.IsNullOrWhiteSpace(orderBy) ? "timestamp" : orderBy;
+        if (!AllowedOrderByFields.Contains(resolvedOrderBy, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException("Invalid orderBy. Allowed values: timestamp, clientName, accountNumber, strategyName, equityConnect.", nameof(orderBy));
+
+        var resolvedOrderDirection = string.IsNullOrWhiteSpace(orderDirection) ? "desc" : orderDirection;
+        if (!resolvedOrderDirection.Equals("asc", StringComparison.OrdinalIgnoreCase)
+            && !resolvedOrderDirection.Equals("desc", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("Invalid orderDirection. Allowed values: asc, desc.", nameof(orderDirection));
+        }
+
+        var filtered = ApplyQuery(MockedData, query);
+        var ordered = ApplyOrdering(filtered, resolvedOrderBy, resolvedOrderDirection).ToList();
+
         // No pagination requested — return everything
         if (!page.HasValue && !pageSize.HasValue)
-            return Task.FromResult(PagedResponse<SubscriptionHistoryItem>.All(MockedData));
+            return Task.FromResult(PagedResponse<SubscriptionHistoryItem>.All(ordered));
 
         // At least one param provided — apply effective defaults
         int effectivePage     = page     ?? 1;
         int effectivePageSize = pageSize ?? 20;
 
         int skip = (effectivePage - 1) * effectivePageSize;
-        var slice = MockedData.Skip(skip).Take(effectivePageSize).ToList();
+        var slice = ordered.Skip(skip).Take(effectivePageSize).ToList();
 
         return Task.FromResult(
-            PagedResponse<SubscriptionHistoryItem>.Paginated(slice, MockedData.Count, effectivePage, effectivePageSize));
+            PagedResponse<SubscriptionHistoryItem>.Paginated(slice, ordered.Count, effectivePage, effectivePageSize));
+    }
+
+    private static IEnumerable<SubscriptionHistoryItem> ApplyQuery(
+        IEnumerable<SubscriptionHistoryItem> source,
+        string? query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return source;
+
+        var term = query.Trim();
+        return source.Where(x =>
+            x.ClientName.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || x.AccountNumber.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || x.StrategyName.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IOrderedEnumerable<SubscriptionHistoryItem> ApplyOrdering(
+        IEnumerable<SubscriptionHistoryItem> source,
+        string orderBy,
+        string orderDirection)
+    {
+        var isAscending = orderDirection.Equals("asc", StringComparison.OrdinalIgnoreCase);
+
+        return orderBy.ToLowerInvariant() switch
+        {
+            "timestamp" => isAscending ? source.OrderBy(x => x.Timestamp) : source.OrderByDescending(x => x.Timestamp),
+            "clientname" => isAscending ? source.OrderBy(x => x.ClientName) : source.OrderByDescending(x => x.ClientName),
+            "accountnumber" => isAscending ? source.OrderBy(x => x.AccountNumber) : source.OrderByDescending(x => x.AccountNumber),
+            "strategyname" => isAscending ? source.OrderBy(x => x.StrategyName) : source.OrderByDescending(x => x.StrategyName),
+            "equityconnect" => isAscending ? source.OrderBy(x => x.EquityConnect) : source.OrderByDescending(x => x.EquityConnect),
+            _ => source.OrderByDescending(x => x.Timestamp)
+        };
     }
 }

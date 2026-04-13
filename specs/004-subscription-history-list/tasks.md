@@ -8,7 +8,7 @@
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (US1, US2)
+- **[Story]**: Which user story this task belongs to (US1, US2, US3, US4)
 
 ---
 
@@ -94,13 +94,68 @@
 
 ---
 
-## Phase 5: Polish & Cross-Cutting Concerns
+## Phase 5: User Story 3 — Filter Subscription History by Query (Priority: P2)
+
+**Goal**: `GET /api/subscription-history` supports query filtering (`query`) with proper total count behavior.
+
+**Independent Test**: Call `GET /api/subscription-history?query=Alice` and verify only matching rows are returned.
+
+### Tests for User Story 3
+
+- [X] T018 [P] [US3] Add unit tests in `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`:
+  - `GetAsync_WithQuery_FiltersByClientAccountOrStrategy`
+
+- [X] T019 [P] [US3] Add integration tests in `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`:
+  - `GetSubscriptionHistory_WithQueryFilter_ReturnsMatchingRows`
+
+### Implementation for User Story 3
+
+- [X] T020 [US3] Extend `ISubscriptionHistoryService.GetAsync` signature and controller action query parameters to include `query`
+- [X] T021 [US3] Extend `SubscriptionHistoryService.GetAsync` to apply filtering before pagination:
+  - `query`: case-insensitive partial match on `ClientName`, `AccountNumber`, `StrategyName`
+
+**Checkpoint**: Filtered requests return only matching records and `totalCount` equals filtered set size.
+
+---
+
+## Phase 6: User Story 4 — Sort Subscription History by Field and Direction (Priority: P3)
+
+**Goal**: `GET /api/subscription-history` supports `orderBy` and `orderDirection` (`asc`, `desc`) with validation; sorting is applied after filtering and before pagination.
+
+**Independent Test**: Call `GET /api/subscription-history?orderBy=clientName&orderDirection=asc` and verify ascending sort; invalid sort params return 400.
+
+### Tests for User Story 4
+
+- [X] T022 [P] [US4] Add unit tests in `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`:
+  - `GetAsync_WithOrderByClientName_DefaultsToDescending`
+  - `GetAsync_WithOrderDirectionOnly_AppliesToDefaultTimestamp`
+  - `GetAsync_WithInvalidOrderBy_ThrowsArgumentException`
+  - `GetAsync_WithInvalidOrderDirection_ThrowsArgumentException`
+
+- [X] T023 [P] [US4] Add integration tests in `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`:
+  - `GetSubscriptionHistory_WithOrderByAndDirection_ReturnsSortedRows`
+  - `GetSubscriptionHistory_WithInvalidOrderBy_Returns400ProblemDetails`
+  - `GetSubscriptionHistory_WithInvalidOrderDirection_Returns400ProblemDetails`
+
+### Implementation for User Story 4
+
+- [X] T024 [US4] Extend service sorting logic with allowed fields:
+  - `timestamp`, `clientName`, `accountNumber`, `strategyName`, `equityConnect`
+  - default `orderBy=timestamp`, default `orderDirection=desc`
+  - if `orderDirection` is provided without `orderBy`, apply it to default field `timestamp`
+- [X] T025 [US4] Validate `orderBy` and `orderDirection` values and throw `ArgumentException` for unsupported values
+
+**Checkpoint**: Sorted responses are deterministic and valid combinations with filter/pagination preserve the sequence.
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: Swagger documentation and final validation.
 
-- [X] T018 [P] Add XML doc summary comments to the `[HttpGet]` action in `SubscriptionHistoryController.cs` and add `<param>` docs for `page` and `pageSize`; verify `<GenerateDocumentationFile>true</GenerateDocumentationFile>` is set in `SubscriptionHistory.API.csproj`
-- [X] T019 Assert `GET /swagger/v1/swagger.json` returns 200 and the response JSON contains the path `"/api/subscription-history"` — verifiable via an integration test or `curl`; this replaces the manual Swagger browser check
-- [X] T020 Run full test suite `dotnet test` from `Backend/` and confirm zero failures across all test projects
+- [X] T026 [P] Update XML docs for `[HttpGet]` in `SubscriptionHistoryController.cs` to describe all query params (`query`, `orderBy`, `orderDirection`, `page`, `pageSize`)
+- [X] T027 Assert `GET /swagger/v1/swagger.json` includes `GET /api/subscription-history` and all five query parameters in the operation definition
+- [X] T028 Run full test suite `dotnet test` from `Backend/` and confirm zero failures across all test projects
 
 ---
 
@@ -112,12 +167,16 @@
 - **Foundational (Phase 2)**: Depends on Phase 1 completion — **BLOCKS all user stories**
 - **User Story 1 (Phase 3)**: Depends on Phase 2 completion
 - **User Story 2 (Phase 4)**: Depends on Phase 3 completion (extends the same service and controller)
-- **Polish (Phase 5)**: Depends on Phase 4 completion
+- **US3 (Phase 5)**: Depends on Phase 4 completion
+- **US4 (Phase 6)**: Depends on Phase 5 completion
+- **Polish (Phase 7)**: Depends on Phase 6 completion
 
 ### User Story Dependencies
 
 - **US1 (P1)**: Can start after Foundational phase — no dependency on US2
 - **US2 (P2)**: Depends on US1 being implemented (US2 extends the same service and controller, not a separate endpoint)
+- **US3 (P2)**: Depends on US2 because filtering + pagination interactions must be validated together
+- **US4 (P3)**: Depends on US3 because sort is applied after filtering
 
 ### Within Each User Story
 
@@ -131,7 +190,9 @@
 - T005, T006, T007 (DTO + GlobalUsings) can run in parallel — different files
 - T011 and T012 (US1 tests) can be written in parallel — different files
 - T015 and T016 (US2 tests) can be written in parallel — different files
-- T018 (Swagger docs) before T019 (Swagger verification) — sequential
+- T018 and T019 (US3 tests) can be written in parallel — different files
+- T022 and T023 (US4 tests) can be written in parallel — different files
+- T026 (Swagger docs) before T027 (Swagger verification) — sequential
 
 ---
 
@@ -158,6 +219,30 @@ Task T016: Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs (pa
 Task T017: Extend SubscriptionHistoryService.GetAsync with pagination logic
 ```
 
+## Parallel Example: User Story 3
+
+```
+# Write tests in parallel:
+Task T018: SubscriptionHistoryServiceTests.cs (filter unit tests)
+Task T019: Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs (filter integration tests)
+
+# After tests are written and failing, implement:
+Task T020: Extend controller + service interface parameters
+Task T021: Add query filter logic
+```
+
+## Parallel Example: User Story 4
+
+```
+# Write tests in parallel:
+Task T022: SubscriptionHistoryServiceTests.cs (sort unit tests)
+Task T023: Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs (sort integration tests)
+
+# After tests are written and failing, implement:
+Task T024: Add sorting logic and defaults
+Task T025: Add orderBy/orderDirection validation
+```
+
 ---
 
 ## Implementation Strategy
@@ -174,8 +259,10 @@ Task T017: Extend SubscriptionHistoryService.GetAsync with pagination logic
 
 1. Phase 1 + Phase 2 → Foundation ready
 2. Phase 3 → Full list endpoint works → **MVP demo**
-3. Phase 4 → Pagination works → Full feature complete
-4. Phase 5 → Swagger documented → Ready for PR
+3. Phase 4 → Pagination works
+4. Phase 5 → Filtering works (`query`)
+5. Phase 6 → Sorting works (`orderBy`, `orderDirection`)
+6. Phase 7 → Swagger documented and tests green → Ready for PR
 
 ---
 

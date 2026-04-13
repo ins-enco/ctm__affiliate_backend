@@ -5,7 +5,14 @@
 
 ## Summary
 
-Expose a `GET /api/subscription-history` endpoint that returns a list of subscription history records (client subscribe/unsubscribe events for trading strategies). Data is served from an in-memory mocked dataset — no database tables or migrations required. Pagination is optional: omitting `page`/`pageSize` returns all records; providing them returns a sliced result with full pagination metadata. A new `SubscriptionHistory` module (2 layers: API + Application) is added to the modular monolith.
+Expose a `GET /api/subscription-history` endpoint that returns a list of subscription history records (client subscribe/unsubscribe events for trading strategies). Data is served from an in-memory mocked dataset — no database tables or migrations required.
+
+The endpoint supports three orthogonal optional capabilities applied in this order: **filter → sort → paginate**:
+- **Filtering**: `query` (partial match on client name, account number, strategy name)
+- **Ordering**: `orderBy` (field name, default `timestamp`) + `orderDirection` (`asc` / `desc`, default `desc`)
+- **Pagination**: `page` + `pageSize` (omitting both returns all matching records)
+
+A new `SubscriptionHistory` module (2 layers: API + Application) is added to the modular monolith.
 
 ## Technical Context
 
@@ -94,8 +101,8 @@ Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/
 
 Files to create:
 1. `DTOs/SubscriptionHistoryItem.cs` — record with 7 fields (see data-model.md)
-2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
-3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params
+2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize, string? query, string? orderBy, string? orderDirection)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
+3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; applies filter → sort → paginate and returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params
 4. `GlobalUsings.cs` — includes `global using CopyTradeMarketApi.Shared.Responses;`
 
 > **Note**: No `SubscriptionHistoryResponse.cs` is created — spec 003 provides `PagedResponse<T>` in `CopyTradeMarketApi.Shared` for this purpose.
@@ -108,7 +115,7 @@ Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.API/Subscrip
 - Project reference: `SubscriptionHistory.Application`
 
 Files to create:
-1. `Controllers/SubscriptionHistoryController.cs` — `GET /api/subscription-history` with optional `[FromQuery] int? page, int? pageSize`
+1. `Controllers/SubscriptionHistoryController.cs` — `GET /api/subscription-history` with optional `[FromQuery] int? page, int? pageSize, string? query, string? orderBy, string? orderDirection`
 2. `SubscriptionHistoryModule.cs` — implements `IModule`; registers `ISubscriptionHistoryService` as singleton and maps controller routes
 3. `GlobalUsings.cs`
 
@@ -131,6 +138,11 @@ Test cases in `SubscriptionHistoryServiceTests.cs`:
 - `GetAsync_WithPageSizeOnly_DefaultsPageToOne` — pageSize=5 without page → same as page=1
 - `GetAsync_WithPageOnly_DefaultsPageSizeToTwenty` — page=1 without pageSize → pageSize=20 in response
 - `GetAsync_WithZeroPage_ThrowsArgumentException` — invalid input guard
+- `GetAsync_WithQuery_FiltersByClientAccountOrStrategy` — query filter is case-insensitive and partial
+- `GetAsync_WithOrderByClientName_DefaultsToDescending` — sorting by field works
+- `GetAsync_WithOrderDirectionOnly_AppliesToDefaultTimestamp` — direction-only request applies to default field
+- `GetAsync_WithInvalidOrderBy_ThrowsArgumentException` — invalid orderBy rejected
+- `GetAsync_WithInvalidOrderDirection_ThrowsArgumentException` — invalid orderDirection rejected
 
 ### Step 5 — Integration tests
 
@@ -140,11 +152,16 @@ Add to existing `Backend/tests/Integration.Tests/SubscriptionHistory/Subscriptio
 - `GetSubscriptionHistory_WithZeroPage_Returns400ProblemDetails`
 - `GetSubscriptionHistory_WithZeroPageSize_Returns400ProblemDetails`
 - `GetSubscriptionHistory_WithPageBeyondTotal_Returns200EmptyItems`
+- `GetSubscriptionHistory_WithQueryFilter_ReturnsMatchingRows`
+- `GetSubscriptionHistory_WithOrderByAndDirection_ReturnsSortedRows`
+- `GetSubscriptionHistory_WithInvalidOrderBy_Returns400ProblemDetails`
+- `GetSubscriptionHistory_WithInvalidOrderDirection_Returns400ProblemDetails`
 
 ### Step 6 — Swagger / solution file
 
 - Ensure `SubscriptionHistory.API.csproj` and `SubscriptionHistory.Application.csproj` are added to `Backend/CopyTradeMarketApi.slnx`
 - Verify `GET /api/subscription-history` appears in Swagger UI after `dotnet run`
+- Verify Swagger lists all query parameters: `query`, `orderBy`, `orderDirection`, `page`, `pageSize`
 
 ## Complexity Tracking
 

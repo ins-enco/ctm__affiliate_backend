@@ -100,6 +100,41 @@ SubscriptionHistoryResponse {
 
 ## Decision 7: Sort Order
 
-**Decision**: Records returned newest-first (descending by timestamp).
+**Decision**: Default ordering is newest-first (`timestamp desc`) and clients may override using `orderBy` + `orderDirection`.
 
-**Rationale**: Matches the UI design screenshot and the spec assumption. Most recent activity is what users want to see first.
+**Rationale**: Matches the UI design screenshot and the spec assumption while still allowing consumer-specific sorting needs.
+
+**Allowed order fields**:
+- `timestamp`
+- `clientName`
+- `accountNumber`
+- `strategyName`
+- `equityConnect`
+
+**Direction values**:
+- `asc`
+- `desc`
+
+**Defaults and behavior**:
+- If `orderBy` omitted → default field `timestamp`
+- If `orderDirection` omitted → default direction `desc`
+- If only `orderDirection` is provided → it applies to default field `timestamp`
+
+**Validation**:
+- Unknown `orderBy` or `orderDirection` returns 400 ProblemDetails (via `ArgumentException` + middleware)
+
+---
+
+## Decision 8: Query Filtering
+
+**Decision**: Support `query` as a case-insensitive partial-match filter across `clientName`, `accountNumber`, and `strategyName`.
+
+**Rationale**: This gives flexible free-text lookup for common operator workflows while keeping request semantics simple.
+
+**Behavior**:
+- `query` empty or whitespace-only is treated as not provided
+
+**Processing order**:
+- Filter first (`query`)
+- Sort second (`orderBy`, `orderDirection`)
+- Paginate last (`page`, `pageSize`)
