@@ -5,6 +5,7 @@
     <ProjectReference Include="..\..\Modules\Auth\Auth.API\Auth.API.csproj" />
     <ProjectReference Include="..\..\Modules\Tracking\Tracking.API\Tracking.API.csproj" />
     <ProjectReference Include="..\..\Modules\Affiliate\Affiliate.API\Affiliate.API.csproj" />
+    <ProjectReference Include="..\..\Modules\SubscriptionHistory\SubscriptionHistory.API\SubscriptionHistory.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>

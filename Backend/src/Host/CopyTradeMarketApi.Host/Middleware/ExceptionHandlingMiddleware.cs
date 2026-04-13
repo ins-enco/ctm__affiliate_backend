@@ -32,11 +32,13 @@ public class ExceptionHandlingMiddleware
     {
         var (statusCode, title) = ex switch
         {
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
-            KeyNotFoundException        => (StatusCodes.Status404NotFound,     "Not Found"),
-            ConflictException           => (StatusCodes.Status409Conflict,     "Conflict"),
-            InvalidOperationException   => (StatusCodes.Status400BadRequest,   "Bad Request"),
-            _                           => (StatusCodes.Status500InternalServerError, "Internal Server Error")
+            UnauthorizedAccessException  => (StatusCodes.Status401Unauthorized,    "Unauthorized"),
+            KeyNotFoundException         => (StatusCodes.Status404NotFound,        "Not Found"),
+            ConflictException            => (StatusCodes.Status409Conflict,        "Conflict"),
+            TooManyRequestsException     => (StatusCodes.Status429TooManyRequests, "Too Many Requests"),
+            InvalidOperationException    => (StatusCodes.Status400BadRequest,      "Bad Request"),
+            ArgumentException            => (StatusCodes.Status400BadRequest,      "Bad Request"),
+            _                            => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
 
         _logger.LogError(ex, "Unhandled exception: {Method} {Path}", context.Request.Method, context.Request.Path);

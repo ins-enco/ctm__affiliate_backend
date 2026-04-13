@@ -4,7 +4,8 @@ public class AuthService(
     AuthDbContext db,
     IAffiliateLookupService affiliateLookup,
     JwtSettings jwtSettings,
-    IEventPublisher eventPublisher) : IAuthService
+    IEventPublisher eventPublisher,
+    IVerificationService verificationService) : IAuthService
 {
     public async Task<RegisterResult> RegisterAsync(RegisterRequest request)
     {
@@ -48,6 +49,12 @@ public class AuthService(
 
         return BuildToken(user.Id, affiliateId);
     }
+
+    public Task VerifyEmailAsync(string token)
+        => verificationService.VerifyAsync(token);
+
+    public Task ResendVerificationAsync(string email)
+        => verificationService.ResendAsync(email);
 
     private AuthResult BuildToken(int userId, int affiliateId)
     {
