@@ -70,4 +70,55 @@ public class SubscriptionHistoryServiceTests
     {
         await Assert.ThrowsAsync<ArgumentException>(() => _service.GetAsync(1, 0));
     }
+
+    // ── User Story 3 ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAsync_WithQuery_FiltersByClientAccountOrStrategy()
+    {
+        var result = await _service.GetAsync(null, null, query: "Alice");
+
+        Assert.NotEmpty(result.Items);
+        Assert.All(result.Items, item =>
+            Assert.True(
+                item.ClientName.Contains("Alice", StringComparison.OrdinalIgnoreCase)
+                || item.AccountNumber.Contains("Alice", StringComparison.OrdinalIgnoreCase)
+                || item.StrategyName.Contains("Alice", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    // ── User Story 4 ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAsync_WithOrderByClientName_DefaultsToDescending()
+    {
+        var result = await _service.GetAsync(null, null, orderBy: "clientName");
+
+        Assert.NotEmpty(result.Items);
+        var names = result.Items.Select(x => x.ClientName).ToList();
+        var expected = names.OrderByDescending(x => x, StringComparer.Ordinal).ToList();
+        Assert.Equal(expected, names);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithOrderDirectionOnly_AppliesToDefaultTimestamp()
+    {
+        var result = await _service.GetAsync(null, null, orderDirection: "asc");
+
+        Assert.NotEmpty(result.Items);
+        var timestamps = result.Items.Select(x => x.Timestamp).ToList();
+        var expected = timestamps.OrderBy(x => x).ToList();
+        Assert.Equal(expected, timestamps);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithInvalidOrderBy_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.GetAsync(null, null, orderBy: "unknown"));
+    }
+
+    [Fact]
+    public async Task GetAsync_WithInvalidOrderDirection_ThrowsArgumentException()
+    {
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.GetAsync(null, null, orderDirection: "up"));
+    }
 }

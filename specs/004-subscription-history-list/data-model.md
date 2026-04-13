@@ -77,14 +77,18 @@ public record SubscriptionHistoryResponse(
 
 ## Query Parameters
 
-| Parameter  | Type   | Required | Default                        | Validation                  |
-|------------|--------|----------|--------------------------------|-----------------------------|
-| `page`     | `int?` | No       | `1` (when `pageSize` provided) | Must be ≥ 1 if present      |
-| `pageSize` | `int?` | No       | `20` (when `page` provided)    | Must be ≥ 1 if present      |
+| Parameter        | Type     | Required | Default                        | Validation |
+|------------------|----------|----------|--------------------------------|------------|
+| `query`          | `string?`| No       | `null`                         | Empty/whitespace treated as no filter |
+| `orderBy`        | `string?`| No       | `timestamp`                    | Allowed: `timestamp`, `clientName`, `accountNumber`, `strategyName`, `equityConnect` |
+| `orderDirection` | `string?`| No       | `desc`                         | Allowed: `asc`, `desc` |
+| `page`           | `int?`   | No       | `1` (when `pageSize` provided) | Must be ≥ 1 if present |
+| `pageSize`       | `int?`   | No       | `20` (when `page` provided)    | Must be ≥ 1 if present |
 
 **Pagination mode detection**:
 - Neither `page` nor `pageSize` → return all records; `Page`, `PageSize`, `TotalPages` in response are `null`
 - Either or both provided → apply defaults, paginate, populate all response fields
+- Processing order is always: filter → sort → paginate
 
 ---
 
@@ -106,7 +110,12 @@ The mocked dataset contains **20 records** initialized in `SubscriptionHistorySe
 ```csharp
 public interface ISubscriptionHistoryService
 {
-    Task<SubscriptionHistoryResponse> GetAsync(int? page, int? pageSize);
+    Task<SubscriptionHistoryResponse> GetAsync(
+        int? page,
+        int? pageSize,
+        string? query = null,
+        string? orderBy = null,
+        string? orderDirection = null);
 }
 ```
 
@@ -115,7 +124,9 @@ public interface ISubscriptionHistoryService
 2. If no pagination params → return all records; no pagination metadata
 3. If pagination params → apply effective `page` (default 1) and `pageSize` (default 20); compute slice and metadata
 4. `TotalPages = (int)Math.Ceiling((double)TotalCount / effectivePageSize)`
-5. Records always returned newest-first
+5. Filter is applied first (`query`)
+6. Ordering is applied second (`orderBy`, `orderDirection`)
+7. Pagination is applied last (`page`, `pageSize`)
 
 ---
 

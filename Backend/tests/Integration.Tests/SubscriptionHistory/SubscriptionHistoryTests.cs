@@ -81,4 +81,84 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
         Assert.Empty(body.Items);
         Assert.Equal(20, body.TotalCount);
     }
+
+    // ── User Story 3 ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetSubscriptionHistory_WithQueryFilter_ReturnsMatchingRows()
+    {
+        var resp = await _client.GetAsync("/api/subscription-history?query=Alice");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SubscriptionHistoryItem>>();
+        Assert.NotNull(body);
+        Assert.NotEmpty(body.Items);
+        Assert.All(body.Items, item =>
+            Assert.True(
+                item.ClientName.Contains("Alice", StringComparison.OrdinalIgnoreCase)
+                || item.AccountNumber.Contains("Alice", StringComparison.OrdinalIgnoreCase)
+                || item.StrategyName.Contains("Alice", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    // ── User Story 4 ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetSubscriptionHistory_WithOrderByAndDirection_ReturnsSortedRows()
+    {
+        var resp = await _client.GetAsync("/api/subscription-history?orderBy=clientName&orderDirection=asc");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SubscriptionHistoryItem>>();
+        Assert.NotNull(body);
+        Assert.NotEmpty(body.Items);
+
+        var names = body.Items.Select(x => x.ClientName).ToList();
+        var expected = names.OrderBy(x => x, StringComparer.Ordinal).ToList();
+        Assert.Equal(expected, names);
+    }
+
+    [Fact]
+    public async Task GetSubscriptionHistory_WithInvalidOrderBy_Returns400ProblemDetails()
+    {
+        var resp = await _client.GetAsync("/api/subscription-history?orderBy=invalid");
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("detail", out _) || body.TryGetProperty("title", out _));
+    }
+
+    [Fact]
+    public async Task GetSubscriptionHistory_WithInvalidOrderDirection_Returns400ProblemDetails()
+    {
+        var resp = await _client.GetAsync("/api/subscription-history?orderDirection=up");
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("detail", out _) || body.TryGetProperty("title", out _));
+    }
+
+    // ── Phase 7: Swagger ──────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SwaggerJson_ContainsSubscriptionHistoryOperationWithAllQueryParameters()
+    {
+        var resp = await _client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.TryGetProperty("paths", out var paths));
+
+        var operation = paths.GetProperty("/api/subscription-history").GetProperty("get");
+        var parameters = operation.GetProperty("parameters");
+        var names = parameters.EnumerateArray()
+            .Select(p => p.GetProperty("name").GetString())
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.Contains("query", names);
+        Assert.Contains("orderBy", names);
+        Assert.Contains("orderDirection", names);
+        Assert.Contains("page", names);
+        Assert.Contains("pageSize", names);
+    }
 }

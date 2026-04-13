@@ -8,13 +8,16 @@
 
 ## GET /api/subscription-history
 
-Returns a list of subscription history records. Pagination is optional — omit query parameters to receive all records.
+Returns a list of subscription history records. Filtering, ordering, and pagination are all optional.
 
 ### Request
 
 ```
 GET /api/subscription-history
 GET /api/subscription-history?page=1&pageSize=10
+GET /api/subscription-history?query=Alice
+GET /api/subscription-history?orderBy=clientName&orderDirection=asc
+GET /api/subscription-history?query=Alpha&orderBy=timestamp&orderDirection=desc&page=1&pageSize=10
 ```
 
 **Headers**
@@ -25,12 +28,25 @@ GET /api/subscription-history?page=1&pageSize=10
 
 **Query Parameters**
 
-| Parameter  | Type    | Required | Default | Description                                     |
-|------------|---------|----------|---------|-------------------------------------------------|
-| `page`     | integer | No       | `1`*    | 1-based page number. Must be ≥ 1 if provided.   |
-| `pageSize` | integer | No       | `20`*   | Records per page. Must be ≥ 1 if provided.      |
+| Parameter        | Type    | Required | Default | Description |
+|------------------|---------|----------|---------|-------------|
+| `query`          | string  | No       | —       | Case-insensitive partial match across `clientName`, `accountNumber`, and `strategyName`. |
+| `orderBy`        | string  | No       | `timestamp` | Sort field. Allowed values: `timestamp`, `clientName`, `accountNumber`, `strategyName`, `equityConnect`. |
+| `orderDirection` | string  | No       | `desc`  | Sort direction. Allowed values: `asc`, `desc`. |
+| `page`           | integer | No       | `1`*    | 1-based page number. Must be ≥ 1 if provided. |
+| `pageSize`       | integer | No       | `20`*   | Records per page. Must be ≥ 1 if provided. |
 
-\* Defaults apply only when the other pagination parameter is present. When **neither** is provided, all records are returned and both default to null.
+\* Pagination defaults apply only when the other pagination parameter is present. When neither `page` nor `pageSize` is provided, all matching records are returned and pagination fields are null.
+
+Ordering rules:
+- If `orderBy` is omitted, default field is `timestamp`.
+- If `orderDirection` is omitted, default direction is `desc`.
+- If only `orderDirection` is provided, it applies to default field `timestamp`.
+
+Processing order:
+- Filter first (`query`)
+- Order second (`orderBy`, `orderDirection`)
+- Paginate last (`page`, `pageSize`)
 
 ---
 
@@ -63,6 +79,32 @@ All records returned. `page`, `pageSize`, `totalPages` are absent (null in JSON)
     }
   ],
   "totalCount": 20,
+  "page": null,
+  "pageSize": null,
+  "totalPages": null
+}
+```
+
+#### 200 OK — Filtered and ordered result
+
+```http
+GET /api/subscription-history?query=Alice&orderBy=timestamp&orderDirection=asc
+```
+
+```json
+{
+  "items": [
+    {
+      "timestamp": "2021-12-20T08:00:00Z",
+      "clientName": "Alice Tran",
+      "accountNumber": "ACC-001",
+      "strategyName": "Alpha Growth",
+      "equityConnect": 12000.00,
+      "equityDisconnect": null,
+      "actionType": "Subscribe"
+    }
+  ],
+  "totalCount": 1,
   "page": null,
   "pageSize": null,
   "totalPages": null
@@ -150,7 +192,7 @@ GET /api/subscription-history?page=1&pageSize=-1
 | Field        | Type                           | Nullable | Description                                                   |
 |--------------|--------------------------------|----------|---------------------------------------------------------------|
 | `items`      | `SubscriptionHistoryItem[]`    | No       | List of records for the current page (or all records)         |
-| `totalCount` | `integer`                      | No       | Total records in the full dataset (before any paging)         |
+| `totalCount` | `integer`                      | No       | Total records after filtering and before pagination             |
 | `page`       | `integer`                      | Yes      | Current page number; `null` when pagination was not requested |
 | `pageSize`   | `integer`                      | Yes      | Page size applied; `null` when pagination was not requested   |
 | `totalPages` | `integer`                      | Yes      | Total page count; `null` when pagination was not requested    |
@@ -190,4 +232,6 @@ XML doc comments on the controller action provide the Swagger description and pa
 | `page=-5`                   | 400    | `Page number must be greater than 0.` |
 | `pageSize=0`                | 400    | `Page size must be greater than 0.`   |
 | `pageSize=-1`               | 400    | `Page size must be greater than 0.`   |
+| `orderBy=unknown`           | 400    | `Invalid orderBy. Allowed values: ...` |
+| `orderDirection=up`         | 400    | `Invalid orderDirection. Allowed values: asc, desc.` |
 | Valid request (any mode)    | 200    | —                                     |
