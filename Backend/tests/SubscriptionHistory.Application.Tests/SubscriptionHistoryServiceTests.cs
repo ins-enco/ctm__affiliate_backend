@@ -86,6 +86,20 @@ public class SubscriptionHistoryServiceTests
                 || item.StrategyName.Contains("Alice", StringComparison.OrdinalIgnoreCase)));
     }
 
+    [Theory]
+    [InlineData(100)]
+    [InlineData(1000)]
+    [InlineData(10000)]
+    public async Task GetAsync_WithVeryLongQuery_DoesNotThrowAndReturnsEmptyWhenNoMatch(int queryLength)
+    {
+        var query = new string('x', queryLength);
+
+        var result = await _service.GetAsync(null, null, query: query);
+
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalCount);
+    }
+
     // ── User Story 4 ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -95,7 +109,7 @@ public class SubscriptionHistoryServiceTests
 
         Assert.NotEmpty(result.Items);
         var names = result.Items.Select(x => x.ClientName).ToList();
-        var expected = names.OrderByDescending(x => x, StringComparer.Ordinal).ToList();
+        var expected = names.OrderByDescending(x => x).ToList();
         Assert.Equal(expected, names);
     }
 

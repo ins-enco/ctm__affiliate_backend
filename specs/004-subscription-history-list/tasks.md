@@ -159,6 +159,16 @@
 
 ---
 
+## Phase 8: Data Robustness (Unicode + Long Strings)
+
+**Purpose**: Validate API behavior with multilingual and very long mocked string values.
+
+- [X] T029 [US1] Extend mocked dataset in `SubscriptionHistoryService` with multilingual Unicode names and deterministic long-string generated values for `ClientName` and `StrategyName`
+- [X] T030 [US3] Add unit test coverage for long query lengths (100, 1,000, 10,000)
+- [X] T031 [US4] Align sort-order test assertions with service comparer behavior to prevent Unicode comparer mismatches
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

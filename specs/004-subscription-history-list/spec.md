@@ -2,7 +2,7 @@
 
 **Feature Branch**: `004-subscription-history-list`  
 **Created**: 2026-04-13  
-**Updated**: 2026-04-13 (added filtering and ordering)  
+**Updated**: 2026-04-13 (added filtering, ordering, and long-string mock-data coverage)  
 **Status**: Updated  
 **Input**: "create a endpoint to return a list of Subscription History (can mock the List instead of creating tables) add pagi, return all if client not ask for pagi" + "Update Spec 004 to contain query like and OrderBy also"
 
@@ -84,9 +84,11 @@ A client provides an ordering field and/or direction and receives records sorted
 - What happens when only `page` is provided without `pageSize`? A default page size of 20 is applied.
 - What happens when only `pageSize` is provided without `page`? Defaults to page 1.
 - What happens when `query` is an empty string? It is treated as no query filter — all records are returned.
+- What happens when `query` is very long (100, 1,000, or 10,000 characters)? The endpoint should return a valid 200 response and apply normal filtering semantics.
 - What happens when `orderBy` is omitted? The default ordering is by timestamp descending (newest first).
 - What happens when `orderDirection` is provided without `orderBy`? The direction is applied to the default `timestamp` field.
 - What happens when all three features are combined (query + pagination + ordering)? Filter is applied first, then ordering, then pagination slice.
+- What happens when records contain multilingual Unicode values (e.g., German/French accents and Chinese/Hindi scripts) and very long generated values in `clientName` or `strategyName`? Filtering and ordering should still return stable, valid responses.
 
 ## Requirements *(mandatory)*
 
@@ -106,6 +108,8 @@ A client provides an ordering field and/or direction and receives records sorted
 - **FR-012**: System MUST support an optional `orderDirection` parameter with accepted values `asc` and `desc`. The default when omitted is `desc`.
 - **FR-013**: System MUST validate the `orderBy` and `orderDirection` parameters and return a 400 Bad Request response when an unrecognised value is supplied.
 - **FR-014**: System MUST apply ordering after filtering and before pagination slicing, so the page slice reflects the correctly ordered and filtered dataset.
+- **FR-015**: System MUST support Unicode characters in `clientName` and `strategyName` values in mocked data and response payloads.
+- **FR-016**: System MUST include mocked records that exercise long-string handling for `clientName` (100, 1,000, 10,000 characters) and `strategyName` (100, 1,000, 10,000, 100,000 characters).
 
 ### Key Entities
 
@@ -127,6 +131,8 @@ A client provides an ordering field and/or direction and receives records sorted
 - **SC-006**: Filtered responses return only records matching all supplied filter criteria, with a total count that reflects only matching records.
 - **SC-007**: Ordered responses return records in the correct sequence for the requested field and direction; the order is stable (consistent across repeated identical requests).
 - **SC-008**: Invalid ordering inputs (unrecognised `orderBy` field or `orderDirection` value) are rejected 100% of the time with a clear error message listing allowed values.
+- **SC-009**: Requests using long query inputs (100, 1,000, 10,000 characters) complete successfully without unhandled exceptions.
+- **SC-010**: Responses with multilingual and long-string mocked values preserve data integrity (no truncation or encoding corruption in API payloads).
 
 ## Assumptions
 
@@ -135,6 +141,7 @@ A client provides an ordering field and/or direction and receives records sorted
 - Default page size when `pageSize` is omitted but `page` is provided is 20 records per page.
 - Equity connect and equity disconnect amounts are represented as decimal numbers with currency context understood by the consumer (not formatted as strings).
 - Action types are limited to two values: "Subscribe" and "Unsubscribe".
+- Mocked dataset intentionally includes multilingual and long-string sample values to validate encoding and length handling behavior.
 - The default sort order is by timestamp descending (newest first) when no ordering parameters are provided, consistent with the UI design reference.
 - The `query` filter performs a partial, case-insensitive match against client name, account number, and strategy name. It does not filter on timestamp or equity amounts.
 - An empty or whitespace-only `query` value is treated equivalently to omitting the parameter (no filter applied).

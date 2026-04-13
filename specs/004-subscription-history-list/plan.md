@@ -12,6 +12,8 @@ The endpoint supports three orthogonal optional capabilities applied in this ord
 - **Ordering**: `orderBy` (field name, default `timestamp`) + `orderDirection` (`asc` / `desc`, default `desc`)
 - **Pagination**: `page` + `pageSize` (omitting both returns all matching records)
 
+Mocked records include multilingual Unicode names and deterministic long-string generated values to validate query/sort behavior on extreme input lengths.
+
 A new `SubscriptionHistory` module (2 layers: API + Application) is added to the modular monolith.
 
 ## Technical Context
@@ -102,7 +104,7 @@ Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/
 Files to create:
 1. `DTOs/SubscriptionHistoryItem.cs` — record with 7 fields (see data-model.md)
 2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize, string? query, string? orderBy, string? orderDirection)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
-3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; applies filter → sort → paginate and returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params
+3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; applies filter → sort → paginate and returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params. Includes deterministic generators for long English `clientName` and `strategyName` values (`BuildRandomEnglishName(length)`, `BuildRandomStrategyName(length)`).
 4. `GlobalUsings.cs` — includes `global using CopyTradeMarketApi.Shared.Responses;`
 
 > **Note**: No `SubscriptionHistoryResponse.cs` is created — spec 003 provides `PagedResponse<T>` in `CopyTradeMarketApi.Shared` for this purpose.
@@ -139,6 +141,7 @@ Test cases in `SubscriptionHistoryServiceTests.cs`:
 - `GetAsync_WithPageOnly_DefaultsPageSizeToTwenty` — page=1 without pageSize → pageSize=20 in response
 - `GetAsync_WithZeroPage_ThrowsArgumentException` — invalid input guard
 - `GetAsync_WithQuery_FiltersByClientAccountOrStrategy` — query filter is case-insensitive and partial
+- `GetAsync_WithVeryLongQuery_DoesNotThrowAndReturnsEmptyWhenNoMatch` — validates long query lengths (100, 1,000, 10,000)
 - `GetAsync_WithOrderByClientName_DefaultsToDescending` — sorting by field works
 - `GetAsync_WithOrderDirectionOnly_AppliesToDefaultTimestamp` — direction-only request applies to default field
 - `GetAsync_WithInvalidOrderBy_ThrowsArgumentException` — invalid orderBy rejected
@@ -156,6 +159,8 @@ Add to existing `Backend/tests/Integration.Tests/SubscriptionHistory/Subscriptio
 - `GetSubscriptionHistory_WithOrderByAndDirection_ReturnsSortedRows`
 - `GetSubscriptionHistory_WithInvalidOrderBy_Returns400ProblemDetails`
 - `GetSubscriptionHistory_WithInvalidOrderDirection_Returns400ProblemDetails`
+
+Ordering assertions should use the same comparer behavior as the service implementation to avoid locale-comparer mismatch in Unicode scenarios.
 
 ### Step 6 — Swagger / solution file
 
