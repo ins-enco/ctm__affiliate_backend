@@ -113,7 +113,7 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
         Assert.NotEmpty(body.Items);
 
         var names = body.Items.Select(x => x.ClientName).ToList();
-        var expected = names.OrderBy(x => x, StringComparer.Ordinal).ToList();
+        var expected = names.OrderBy(x => x).ToList();
         Assert.Equal(expected, names);
     }
 

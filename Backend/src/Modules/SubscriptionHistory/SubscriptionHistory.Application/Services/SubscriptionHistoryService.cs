@@ -7,25 +7,25 @@ public class SubscriptionHistoryService : ISubscriptionHistoryService
 
     private static readonly IReadOnlyList<SubscriptionHistoryItem> MockedData =
     [
-        new(new DateTime(2026, 4, 13, 10, 30, 0), "Alice Tran",   "ACC-001", "Alpha Growth",    12500.00m, null,      "Subscribe"),
-        new(new DateTime(2026, 4, 12, 15, 45, 0), "Bob Nguyen",   "ACC-002", "Beta Momentum",   8750.50m,  8900.00m,  "Unsubscribe"),
-        new(new DateTime(2026, 4, 12, 09, 00, 0), "Charlie Le",   "ACC-003", "Gamma Scalper",   5000.00m,  null,      "Subscribe"),
-        new(new DateTime(2026, 4, 11, 17, 20, 0), "Alice Tran",   "ACC-001", "Beta Momentum",   12000.00m, 12450.00m, "Unsubscribe"),
-        new(new DateTime(2026, 4, 11, 11, 10, 0), "Diana Pham",   "ACC-004", "Alpha Growth",    9300.75m,  null,      "Subscribe"),
-        new(new DateTime(2026, 4, 10, 14, 55, 0), "Bob Nguyen",   "ACC-002", "Delta Swing",     7200.00m,  null,      "Subscribe"),
-        new(new DateTime(2026, 4, 10, 08, 30, 0), "Charlie Le",   "ACC-003", "Alpha Growth",    4800.00m,  4950.00m,  "Unsubscribe"),
+        new(new DateTime(2026, 4, 13, 10, 30, 0), "Jörg Müller",  "ACC-001", "Alpha Growth",    12500.00m, null,      "Subscribe"),
+        new(new DateTime(2026, 4, 12, 15, 45, 0), "Renée Dupont", "ACC-002", "Beta Momentum",   8750.50m,  8900.00m,  "Unsubscribe"),
+        new(new DateTime(2026, 4, 12, 09, 00, 0), "李伟",          "ACC-003", "Gamma Scalper",   5000.00m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 11, 17, 20, 0), BuildRandomEnglishName(1000),  "ACC-001", BuildRandomStrategyName(1000),  12000.00m, 12450.00m, "Unsubscribe"),
+        new(new DateTime(2026, 4, 11, 11, 10, 0), "आरव पटेल",      "ACC-004", "Alpha Growth",    9300.75m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 10, 14, 55, 0), BuildRandomEnglishName(10000), "ACC-002", BuildRandomStrategyName(10000), 7200.00m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 10, 08, 30, 0), BuildRandomEnglishName(100),   "ACC-003", BuildRandomStrategyName(100),   4800.00m,  4950.00m,  "Unsubscribe"),
         new(new DateTime(2026, 4, 09, 16, 00, 0), "Eve Hoang",    "ACC-005", "Gamma Scalper",   15000.00m, null,      "Subscribe"),
         new(new DateTime(2026, 4, 09, 10, 45, 0), "Diana Pham",   "ACC-004", "Delta Swing",     9100.00m,  9250.00m,  "Unsubscribe"),
         new(new DateTime(2026, 4, 08, 13, 30, 0), "Alice Tran",   "ACC-001", "Gamma Scalper",   11800.00m, null,      "Subscribe"),
-        new(new DateTime(2026, 4, 08, 09, 15, 0), "Bob Nguyen",   "ACC-002", "Alpha Growth",    8000.00m,  8100.00m,  "Unsubscribe"),
-        new(new DateTime(2026, 4, 07, 15, 00, 0), "Eve Hoang",    "ACC-005", "Beta Momentum",   14500.00m, 14750.00m, "Unsubscribe"),
-        new(new DateTime(2026, 4, 07, 11, 20, 0), "Frank Vu",     "ACC-006", "Alpha Growth",    6500.00m,  null,      "Subscribe"),
-        new(new DateTime(2026, 4, 06, 14, 10, 0), "Charlie Le",   "ACC-003", "Delta Swing",     5200.00m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 08, 09, 15, 0), BuildRandomEnglishName(100),   "ACC-002", "Alpha Growth",    8000.00m,  8100.00m,  "Unsubscribe"),
+        new(new DateTime(2026, 4, 07, 15, 00, 0), "Eve Hoang",    "ACC-005", BuildRandomStrategyName(100),   14500.00m, 14750.00m, "Unsubscribe"),
+        new(new DateTime(2026, 4, 07, 11, 20, 0), BuildRandomEnglishName(1000),     "ACC-006", BuildRandomStrategyName(100),    6500.00m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 06, 14, 10, 0), "Zoë François", "ACC-004", "Delta Swing",     5200.00m,  null,      "Subscribe"),
         new(new DateTime(2026, 4, 06, 08, 45, 0), "Diana Pham",   "ACC-004", "Beta Momentum",   9800.00m,  null,      "Subscribe"),
         new(new DateTime(2026, 4, 05, 17, 30, 0), "Frank Vu",     "ACC-006", "Gamma Scalper",   6300.00m,  6450.00m,  "Unsubscribe"),
         new(new DateTime(2026, 4, 05, 10, 00, 0), "Alice Tran",   "ACC-001", "Delta Swing",     12200.00m, 12350.00m, "Unsubscribe"),
-        new(new DateTime(2026, 4, 04, 16, 20, 0), "Eve Hoang",    "ACC-005", "Alpha Growth",    14000.00m, null,      "Subscribe"),
-        new(new DateTime(2026, 4, 04, 09, 50, 0), "Bob Nguyen",   "ACC-002", "Gamma Scalper",   7800.00m,  null,      "Subscribe"),
+        new(new DateTime(2026, 4, 04, 16, 20, 0), BuildRandomEnglishName(1000),    "ACC-005", BuildRandomStrategyName(10000),    14000.00m, null,      "Subscribe"),
+        new(new DateTime(2026, 4, 04, 09, 50, 0), "Bob Nguyen",   "ACC-002", BuildRandomStrategyName(10000),   7800.00m,  null,      "Subscribe"),
         new(new DateTime(2026, 4, 03, 14, 00, 0), "Frank Vu",     "ACC-006", "Beta Momentum",   6100.00m,  6200.00m,  "Unsubscribe"),
     ];
 
@@ -102,5 +102,27 @@ public class SubscriptionHistoryService : ISubscriptionHistoryService
             "equityconnect" => isAscending ? source.OrderBy(x => x.EquityConnect) : source.OrderByDescending(x => x.EquityConnect),
             _ => source.OrderByDescending(x => x.Timestamp)
         };
+    }
+
+    private static string BuildRandomEnglishName(int length)
+    {
+        const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        return BuildRandomText(length, alphabet);
+    }
+
+    private static string BuildRandomStrategyName(int length)
+    {
+        const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return BuildRandomText(length, alphabet);
+    }
+
+    private static string BuildRandomText(int length, string alphabet)
+    {
+        var chars = new char[length];
+
+        for (int i = 0; i < length; i++)
+            chars[i] = alphabet[(i * 37 + 17) % alphabet.Length];
+
+        return new string(chars);
     }
 }
