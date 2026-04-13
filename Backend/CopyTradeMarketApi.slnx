@@ -26,6 +26,7 @@
     <Project Path="src/Shared/CopyTradeMarketApi.Shared/CopyTradeMarketApi.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CopyTradeMarketApi.Shared.Tests/CopyTradeMarketApi.Shared.Tests.csproj" />
     <Project Path="tests/Affiliate.Application.Tests/Affiliate.Application.Tests.csproj" />
     <Project Path="tests/Auth.Application.Tests/Auth.Application.Tests.csproj" />
     <Project Path="tests/Tracking.Application.Tests/Tracking.Application.Tests.csproj" />
