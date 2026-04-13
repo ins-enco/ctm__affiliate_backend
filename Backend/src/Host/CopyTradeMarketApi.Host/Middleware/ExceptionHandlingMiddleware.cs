@@ -37,6 +37,7 @@ public class ExceptionHandlingMiddleware
             ConflictException            => (StatusCodes.Status409Conflict,        "Conflict"),
             TooManyRequestsException     => (StatusCodes.Status429TooManyRequests, "Too Many Requests"),
             InvalidOperationException    => (StatusCodes.Status400BadRequest,      "Bad Request"),
+            ArgumentException            => (StatusCodes.Status400BadRequest,      "Bad Request"),
             _                            => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
 

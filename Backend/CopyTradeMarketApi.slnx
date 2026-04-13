@@ -4,6 +4,10 @@
     <Project Path="src/Host/CopyTradeMarketApi.Host/CopyTradeMarketApi.Host.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/SubscriptionHistory/">
+    <Project Path="src/Modules/SubscriptionHistory/SubscriptionHistory.API/SubscriptionHistory.API.csproj" />
+    <Project Path="src/Modules/SubscriptionHistory/SubscriptionHistory.Application/SubscriptionHistory.Application.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Affiliate/">
     <Project Path="src/Modules/Affiliate/Affiliate.API/Affiliate.API.csproj" />
     <Project Path="src/Modules/Affiliate/Affiliate.Application/Affiliate.Application.csproj" />
@@ -30,6 +34,7 @@
     <Project Path="tests/Affiliate.Application.Tests/Affiliate.Application.Tests.csproj" />
     <Project Path="tests/Auth.Application.Tests/Auth.Application.Tests.csproj" />
     <Project Path="tests/Tracking.Application.Tests/Tracking.Application.Tests.csproj" />
+    <Project Path="tests/SubscriptionHistory.Application.Tests/SubscriptionHistory.Application.Tests.csproj" />
     <Project Path="tests/Integration.Tests/Integration.Tests.csproj" />
     <Project Path="tests/Stress.Tests/Stress.Tests.csproj" />
   </Folder>

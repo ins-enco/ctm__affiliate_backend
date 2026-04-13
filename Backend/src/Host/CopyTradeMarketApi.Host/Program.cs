@@ -35,7 +35,8 @@ var modules = new List<IModule>
 {
     new AuthModule(),       // Step 2
     new TrackingModule(),   // Step 3
-    new AffiliateModule()   // Step 4
+    new AffiliateModule(),            // Step 4
+    new SubscriptionHistoryModule()   // Step 5
 };
 
 // Step 5 — In-memory cache + cache abstraction
@@ -107,7 +108,8 @@ foreach (var module in modules)
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(AuthModule).Assembly)
     .AddApplicationPart(typeof(TrackingModule).Assembly)
-    .AddApplicationPart(typeof(AffiliateModule).Assembly);
+    .AddApplicationPart(typeof(AffiliateModule).Assembly)
+    .AddApplicationPart(typeof(SubscriptionHistoryModule).Assembly);
 
 // Override model validation response: return 403 with field-level errors map
 builder.Services.Configure<ApiBehaviorOptions>(options =>

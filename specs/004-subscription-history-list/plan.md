@@ -25,7 +25,7 @@ Expose a `GET /api/subscription-history` endpoint that returns a list of subscri
 |------|--------|-------|
 | Module isolation (P1) | PASS | New `SubscriptionHistory` module — no inter-module project references |
 | Single Responsibility (S) | PASS | Controller routes; Service holds mock data + pagination logic; DTOs are pure records |
-| Async all the way (P5) | PASS | Service method returns `Task<SubscriptionHistoryResponse>`; no `.Result`/`.Wait()` |
+| Async all the way (P5) | PASS | Service method returns `Task<PagedResponse<SubscriptionHistoryItem>>`; no `.Result`/`.Wait()` |
 | ProblemDetails errors (P6) | PASS | Invalid pagination → `ExceptionHandlingMiddleware` surfaces RFC 7807 ProblemDetails |
 | No secrets in source (P4) | PASS | No DB connection strings; no secrets involved |
 | EF migration rule | PASS | Mocked data — no migration needed this iteration |
@@ -68,9 +68,10 @@ Backend/src/
             │   ├── ISubscriptionHistoryService.cs
             │   └── SubscriptionHistoryService.cs
             ├── DTOs/
-            │   ├── SubscriptionHistoryItem.cs
-            │   └── SubscriptionHistoryResponse.cs
+            │   └── SubscriptionHistoryItem.cs
+            ├── GlobalUsings.cs
             └── SubscriptionHistory.Application.csproj
+            (response envelope = PagedResponse<SubscriptionHistoryItem> from CopyTradeMarketApi.Shared.Responses)
 
 Backend/tests/
 ├── SubscriptionHistory.Application.Tests/
@@ -89,14 +90,15 @@ Backend/tests/
 Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/SubscriptionHistory.Application.csproj`:
 - Target: `net8.0`
 - Nullable: enable
-- Dependencies: none (standalone; only system libraries needed)
+- Project reference: `CopyTradeMarketApi.Shared` (required for `PagedResponse<T>`)
 
 Files to create:
 1. `DTOs/SubscriptionHistoryItem.cs` — record with 7 fields (see data-model.md)
-2. `DTOs/SubscriptionHistoryResponse.cs` — unified response record with nullable pagination fields
-3. `Services/ISubscriptionHistoryService.cs` — single method `GetAsync(int? page, int? pageSize)`
-4. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; applies optional pagination
-5. `GlobalUsings.cs` — common usings for the project
+2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
+3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params
+4. `GlobalUsings.cs` — includes `global using CopyTradeMarketApi.Shared.Responses;`
+
+> **Note**: No `SubscriptionHistoryResponse.cs` is created — spec 003 provides `PagedResponse<T>` in `CopyTradeMarketApi.Shared` for this purpose.
 
 ### Step 2 — SubscriptionHistory.API project
 
@@ -141,7 +143,7 @@ Add to existing `Backend/tests/Integration.Tests/SubscriptionHistory/Subscriptio
 
 ### Step 6 — Swagger / solution file
 
-- Ensure `SubscriptionHistory.API.csproj` and `SubscriptionHistory.Application.csproj` are added to the solution (`.sln`) file
+- Ensure `SubscriptionHistory.API.csproj` and `SubscriptionHistory.Application.csproj` are added to `Backend/CopyTradeMarketApi.slnx`
 - Verify `GET /api/subscription-history` appears in Swagger UI after `dotnet run`
 
 ## Complexity Tracking
