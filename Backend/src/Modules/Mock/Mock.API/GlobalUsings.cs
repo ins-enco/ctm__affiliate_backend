@@ -1,6 +1,9 @@
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Filters;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Hosting;
 global using Mock.Application.Services;
 global using CopyTradeMarketApi.Shared.Abstractions;
+global using CopyTradeMarketApi.Shared.Filters;

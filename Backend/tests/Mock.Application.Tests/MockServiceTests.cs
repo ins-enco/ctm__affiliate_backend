@@ -15,7 +15,8 @@ public class MockServiceTests
         var result = await _service.GetUsersAsync();
 
         Assert.NotNull(result);
-        Assert.True(result.Count >= 5, $"Expected ≥5 users, got {result.Count}");
+        Assert.True(result.Items.Count >= 5, $"Expected ≥5 users, got {result.Items.Count}");
+        Assert.True(result.TotalCount >= 5);
     }
 
     [Fact]
@@ -23,9 +24,9 @@ public class MockServiceTests
     {
         var result = await _service.GetUsersAsync();
 
-        Assert.Contains(result, u => u.Role == "Client");
-        Assert.Contains(result, u => u.Role == "Signal Provider");
-        Assert.Contains(result, u => u.Role == "Affiliate");
+        Assert.Contains(result.Items, u => u.Role == "Client");
+        Assert.Contains(result.Items, u => u.Role == "Signal Provider");
+        Assert.Contains(result.Items, u => u.Role == "Affiliate");
     }
 
     [Fact]
@@ -33,19 +34,30 @@ public class MockServiceTests
     {
         var result = await _service.GetUsersAsync();
 
-        Assert.All(result, u => Assert.Contains(u.Role, AllowedRoles));
+        Assert.All(result.Items, u => Assert.Contains(u.Role, AllowedRoles));
     }
 
     [Fact]
-    public async Task GetUsersAsync_AllRecordsHaveNonEmptyNameAndPositiveId()
+    public async Task GetUsersAsync_AllRecordsHaveNonEmptyNameAndId()
     {
         var result = await _service.GetUsersAsync();
 
-        Assert.All(result, u =>
+        Assert.All(result.Items, u =>
         {
-            Assert.True(u.Id > 0);
+            Assert.False(string.IsNullOrWhiteSpace(u.Id));
             Assert.False(string.IsNullOrWhiteSpace(u.Name));
         });
+    }
+
+    [Fact]
+    public async Task GetUsersAsync_NonPaginated()
+    {
+        var result = await _service.GetUsersAsync();
+
+        Assert.Null(result.Page);
+        Assert.Null(result.PageSize);
+        Assert.Null(result.TotalPages);
+        Assert.Equal(result.Items.Count, result.TotalCount);
     }
 
     // ── User Story 2: Current Active User ─────────────────────────────────────
@@ -79,7 +91,7 @@ public class MockServiceTests
     {
         var result = await _service.GetCurrentUserAsync();
 
-        Assert.True(result.Id > 0);
+        Assert.False(string.IsNullOrWhiteSpace(result.Id));
         Assert.False(string.IsNullOrWhiteSpace(result.Name));
     }
 
@@ -90,7 +102,8 @@ public class MockServiceTests
     {
         var result = await _service.GetClientRequestsAsync();
 
-        Assert.Equal(10, result.Count);
+        Assert.Equal(10, result.Items.Count);
+        Assert.Equal(10, result.TotalCount);
     }
 
     [Fact]
@@ -98,7 +111,7 @@ public class MockServiceTests
     {
         var result = await _service.GetClientRequestsAsync();
 
-        Assert.All(result, r => Assert.True(r.Equity > 0, $"Equity must be > 0, got {r.Equity}"));
+        Assert.All(result.Items, r => Assert.True(r.Equity > 0, $"Equity must be > 0, got {r.Equity}"));
     }
 
     [Fact]
@@ -106,7 +119,7 @@ public class MockServiceTests
     {
         var result = await _service.GetClientRequestsAsync();
 
-        Assert.All(result, r =>
+        Assert.All(result.Items, r =>
         {
             Assert.False(string.IsNullOrWhiteSpace(r.Name));
             Assert.False(string.IsNullOrWhiteSpace(r.Strategy));
@@ -121,7 +134,8 @@ public class MockServiceTests
     {
         var result = await _service.GetSignalProviderRequestsAsync();
 
-        Assert.Equal(10, result.Count);
+        Assert.Equal(10, result.Items.Count);
+        Assert.Equal(10, result.TotalCount);
     }
 
     [Fact]
@@ -129,7 +143,7 @@ public class MockServiceTests
     {
         var result = await _service.GetSignalProviderRequestsAsync();
 
-        Assert.All(result, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
+        Assert.All(result.Items, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
     }
 
     [Fact]
@@ -137,7 +151,7 @@ public class MockServiceTests
     {
         var result = await _service.GetSignalProviderRequestsAsync();
 
-        Assert.All(result, r => Assert.False(string.IsNullOrWhiteSpace(r.Name)));
+        Assert.All(result.Items, r => Assert.False(string.IsNullOrWhiteSpace(r.Name)));
     }
 
     // ── User Story 5: Affiliate Requests ─────────────────────────────────────
@@ -147,7 +161,8 @@ public class MockServiceTests
     {
         var result = await _service.GetAffiliateRequestsAsync();
 
-        Assert.Equal(10, result.Count);
+        Assert.Equal(10, result.Items.Count);
+        Assert.Equal(10, result.TotalCount);
     }
 
     [Fact]
@@ -155,7 +170,7 @@ public class MockServiceTests
     {
         var result = await _service.GetAffiliateRequestsAsync();
 
-        Assert.All(result, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
+        Assert.All(result.Items, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
     }
 
     [Fact]
@@ -163,6 +178,6 @@ public class MockServiceTests
     {
         var result = await _service.GetAffiliateRequestsAsync();
 
-        Assert.All(result, r => Assert.False(string.IsNullOrWhiteSpace(r.Name)));
+        Assert.All(result.Items, r => Assert.False(string.IsNullOrWhiteSpace(r.Name)));
     }
 }

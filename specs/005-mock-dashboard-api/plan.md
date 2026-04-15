@@ -5,7 +5,7 @@
 
 ## Summary
 
-Deliver five read-only, in-memory GET endpoints under `/api/mock/*` that serve static mock data for the Dashboard screen. No database, no authentication, no pagination — each endpoint returns its full fixed dataset on every call. The module follows the existing modular-monolith pattern (API + Application layers only, no Domain/Infrastructure), consistent with the SubscriptionHistory module.
+Deliver five read-only, in-memory GET endpoints under `/api/dashboard/*` (plus `GET /api/currentActiveUser`) that serve static mock data for the Dashboard screen. No database, no authentication except the `API-KEY` header check on `currentActiveUser` in Development. `listOfUsers` supports optional `searchText` name filtering. The module follows the existing modular-monolith pattern (API + Application layers only, no Domain/Infrastructure), consistent with the SubscriptionHistory module.
 
 ## Technical Context
 
@@ -16,7 +16,7 @@ Deliver five read-only, in-memory GET endpoints under `/api/mock/*` that serve s
 **Target Platform**: Linux server (Docker Compose)  
 **Project Type**: web-service module (modular monolith plugin)  
 **Performance Goals**: All 5 endpoints respond within 500 ms under normal load (SC-001)  
-**Constraints**: Fully deterministic — no randomness; no authentication required; no write operations; query parameters silently ignored  
+**Constraints**: Fully deterministic — no randomness; no write operations; `searchText` on `listOfUsers` filters by name (case-insensitive contains); `GET /api/currentActiveUser` (no path param) is protected by `API-KEY` header validation in Development (returns 401 if absent or wrong value); `DevApiKeyFilter` is registered in DI and applied to the `currentActiveUser` action only; the filter short-circuits in non-Development environments  
 **Scale/Scope**: 5 GET endpoints; mock-only; will be superseded by real-data endpoints in a future iteration
 
 ## Constitution Check
@@ -29,10 +29,10 @@ Deliver five read-only, in-memory GET endpoints under `/api/mock/*` that serve s
 | **P1 — Modules are islands** | ✅ | `Mock.API` references only `Mock.Application`. No inter-module project references. |
 | **P5 — Async all the way** | ✅ | Service methods return `Task<T>`; no `.Result`/`.Wait()`. |
 | **P6 — Consistent error contract** | ✅ | 405 for non-GET methods is handled automatically by ASP.NET Core routing. No custom error paths required beyond the standard ExceptionHandlingMiddleware. |
-| **API convention** `/api/{module}/{resource}` | ✅ | Endpoints: `/api/mock/users`, `/api/mock/current-user`, `/api/mock/client-requests`, `/api/mock/signal-provider-requests`, `/api/mock/affiliate-requests`. |
-| **Secrets never in source** | ✅ | No secrets required — mock endpoints are unauthenticated by design. |
-| **No auth required** | ✅ per spec | Spec assumption: no authentication or authorization for mock endpoints. |
-| **Definition of done gates** | Pending implementation | spec ✅, plan ✅, unit tests pending, integration tests pending, no compiler warnings pending, Swagger docs pending. |
+| **API convention** `/api/{module}/{resource}` | ✅ | Endpoints: `GET /api/dashboard/listOfUsers`, `GET /api/currentActiveUser`, `GET /api/dashboard/clientRequests`, `GET /api/dashboard/signalProviderRequests`, `GET /api/dashboard/affiliateRequests`. Route split: `[Route("api/dashboard")]` covers 4 endpoints; `[Route("api")]` + `[HttpGet("currentActiveUser")]` covers the active-user endpoint. |
+| **Secrets never in source** | ✅ | `SimulatedKeyForDev` is a hard-coded placeholder value with no real security value. It is only used in the Development environment for mock endpoints. |
+| **No auth required** | ✅ per spec (except currentActiveUser) | `GET /api/currentActiveUser` requires `API-KEY: SimulatedKeyForDev` header in Development (enforced by `DevApiKeyFilter`). All other mock endpoints are unauthenticated. |
+| **Definition of done gates** | ✅ Complete | spec ✅, plan ✅, unit tests ✅, integration tests ✅, no compiler warnings ✅, Swagger docs ✅. |
 
 **No constitution violations. Proceed to Phase 0.**
 
@@ -63,6 +63,10 @@ Backend/
 │   ├── Host/
 │   │   └── CopyTradeMarketApi.Host/
 │   │       └── CopyTradeMarketApi.Host.csproj   ← add Mock.API reference
+│   ├── Shared/
+│   │   └── CopyTradeMarketApi.Shared/
+│   │       └── Filters/
+│   │           └── DevApiKeyFilter.cs   ← reusable across all modules
 │   └── Modules/
 │       └── Mock/                        ← NEW
 │           ├── Mock.API/
@@ -102,38 +106,38 @@ Backend/
 1. Create `Mock.Application.csproj` — references `CopyTradeMarketApi.Shared` only
 2. Add `GlobalUsings.cs`
 3. Create 5 DTO records in `DTOs/`:
-   - `UserDto(int Id, string Name, string Role)`
-   - `CurrentUserDto(int Id, string Name, string Abbreviation, string Role)`
+   - `UserDto(string Id, string Name, string Role)`
+   - `CurrentUserDto(string Id, string Name, string Abbreviation, string Role)`
    - `ClientRequestDto(DateTime Timestamp, string Name, decimal Equity, string Strategy, string StrategyLicense)`
    - `SignalProviderRequestDto(DateTime Timestamp, string Name, string KycStatus)`
    - `AffiliateRequestDto(DateTime Timestamp, string Name, string KycStatus)`
 4. Create `IMockService` with 5 methods:
    ```csharp
-   Task<List<UserDto>> GetUsersAsync();
+   Task<PagedResponse<UserDto>> GetUsersAsync(string? searchText = null);
    Task<CurrentUserDto> GetCurrentUserAsync();
-   Task<List<ClientRequestDto>> GetClientRequestsAsync();
-   Task<List<SignalProviderRequestDto>> GetSignalProviderRequestsAsync();
-   Task<List<AffiliateRequestDto>> GetAffiliateRequestsAsync();
+   Task<PagedResponse<ClientRequestDto>> GetClientRequestsAsync();
+   Task<PagedResponse<SignalProviderRequestDto>> GetSignalProviderRequestsAsync();
+   Task<PagedResponse<AffiliateRequestDto>> GetAffiliateRequestsAsync();
    ```
 5. Implement `MockService` with static in-memory data:
-   - `GetUsersAsync`: ≥5 users covering all 3 roles (Client, Signal Provider, Affiliate)
-   - `GetCurrentUserAsync`: 1 current user (id, name, 2-char abbreviation, role)
-   - `GetClientRequestsAsync`: exactly 10 client request records
-   - `GetSignalProviderRequestsAsync`: exactly 10 signal provider request records
-   - `GetAffiliateRequestsAsync`: exactly 10 affiliate request records
+   - `GetUsersAsync`: returns `PagedResponse<UserDto>.All(filteredUsers)` (apply `searchText` filter when non-empty)
+   - `GetCurrentUserAsync`: returns the static `CurrentUserDto` (plain object — not wrapped)
+   - `GetClientRequestsAsync`: returns `PagedResponse<ClientRequestDto>.All(_clientRequests)` — exactly 10 records
+   - `GetSignalProviderRequestsAsync`: returns `PagedResponse<SignalProviderRequestDto>.All(_signalProviderRequests)` — exactly 10 records
+   - `GetAffiliateRequestsAsync`: returns `PagedResponse<AffiliateRequestDto>.All(_affiliateRequests)` — exactly 10 records
 
 ### Phase 2 — API Layer (Controller + Module)
 
 1. Create `Mock.API.csproj` — references `Mock.Application` + `Microsoft.AspNetCore.App`
 2. Add `GlobalUsings.cs`
-3. Create `MockController` at route `api/mock`:
-   - `GET /api/mock/users` → `GetUsersAsync()`
-   - `GET /api/mock/current-user` → `GetCurrentUserAsync()`
-   - `GET /api/mock/client-requests` → `GetClientRequestsAsync()`
-   - `GET /api/mock/signal-provider-requests` → `GetSignalProviderRequestsAsync()`
-   - `GET /api/mock/affiliate-requests` → `GetAffiliateRequestsAsync()`
-   - Each returns `Ok(result)` — no query parameters, no filtering
-4. Create `MockModule : IModule` — registers `IMockService` as singleton
+3. Create `MockController` with route base `[Route("api")]`:
+   - `[HttpGet("dashboard/listOfUsers")]` → `GetUsersAsync([FromQuery] string? searchText = null)` — passes `searchText` to service; returns filtered or full user list
+   - `[HttpGet("currentActiveUser")]` + `[ServiceFilter(typeof(DevApiKeyFilter))]` → `GetCurrentUserAsync()` — returns the static current user; requires `API-KEY: SimulatedKeyForDev` header in Development (401 otherwise)
+   - `[HttpGet("dashboard/clientRequests")]` → `GetClientRequestsAsync()`
+   - `[HttpGet("dashboard/signalProviderRequests")]` → `GetSignalProviderRequestsAsync()`
+   - `[HttpGet("dashboard/affiliateRequests")]` → `GetAffiliateRequestsAsync()`
+   - Each returns `Ok(result)` — no extra filtering beyond what the service provides
+4. Create `MockModule : IModule` — registers `IMockService` as singleton and `DevApiKeyFilter` as scoped (required for `ServiceFilter` resolution)
 
 ### Phase 3 — Host Wiring
 
@@ -155,7 +159,7 @@ Test cases for `MockService`:
 - `GetUsersAsync` returns ≥5 users
 - `GetUsersAsync` covers all 3 roles (Client, Signal Provider, Affiliate)
 - `GetUsersAsync` — every record has non-empty id, name, and role from allowed set
-- `GetCurrentUserAsync` returns exactly 1 user
+- `GetCurrentUserAsync` returns exactly 1 user (no arguments)
 - `GetCurrentUserAsync` — abbreviation is exactly 2 characters
 - `GetCurrentUserAsync` — role is from allowed set
 - `GetClientRequestsAsync` returns exactly 10 records
@@ -171,14 +175,17 @@ Test cases for `MockService`:
 Add `Mock/MockTests.cs` to existing `Integration.Tests` project.
 
 Test cases (HTTP-level, via `IntegrationWebFactory`):
-- `GET /api/mock/users` → 200; body is array with ≥5 items; each has id, name, role
-- `GET /api/mock/users` → all roles covered in single response
-- `GET /api/mock/current-user` → 200; single object with id, name, 2-char abbreviation, role
-- `GET /api/mock/client-requests` → 200; exactly 10 items; each has timestamp, name, equity (> 0), strategy, strategyLicense
-- `GET /api/mock/signal-provider-requests` → 200; exactly 10 items; each kycStatus in allowed set
-- `GET /api/mock/affiliate-requests` → 200; exactly 10 items; each kycStatus in allowed set
-- Swagger JSON contains all 5 mock endpoints under `/api/mock/*`
-- When host environment is set to non-Development, `GET /api/mock/users` → 404 (endpoints not registered)
+- `GET /api/dashboard/listOfUsers` → 200; body is array with ≥5 items; each has id, name, role
+- `GET /api/dashboard/listOfUsers` → all roles covered in single response
+- `GET /api/dashboard/listOfUsers?searchText=abc` → 200; only users with "abc" in name returned
+- `GET /api/currentActiveUser` with `API-KEY: SimulatedKeyForDev` header → 200; single object with id (string), name, 2-char abbreviation, role
+- `GET /api/currentActiveUser` without `API-KEY` header → 401 Unauthorized
+- `GET /api/currentActiveUser` with wrong `API-KEY` value → 401 Unauthorized
+- `GET /api/dashboard/clientRequests` → 200; exactly 10 items; each has timestamp, name, equity (> 0), strategy, strategyLicense
+- `GET /api/dashboard/signalProviderRequests` → 200; exactly 10 items; each kycStatus in allowed set
+- `GET /api/dashboard/affiliateRequests` → 200; exactly 10 items; each kycStatus in allowed set
+- Swagger JSON contains all 5 mock endpoints under the new route paths
+- When host environment is set to non-Development, `GET /api/dashboard/listOfUsers` → 404 (endpoints not registered)
 
 ### Phase 6 — Swagger
 

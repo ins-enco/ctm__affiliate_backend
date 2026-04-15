@@ -144,6 +144,109 @@
 
 ---
 
+## Phase 9: CR-22 Route & Contract Alignment
+
+**Purpose**: Align routes, DTO id types, service signatures, and tests with the CR-22 contract change.
+
+**⚠️ PREREQUISITE**: T038–T040 (DTO + interface changes) must be applied before T041–T044 to avoid compilation failures.
+
+- [X] T038 [P] Update `Backend/src/Modules/Mock/Mock.Application/DTOs/UserDto.cs` — change `int Id` to `string Id`: `public record UserDto(string Id, string Name, string Role);`
+- [X] T039 [P] Update `Backend/src/Modules/Mock/Mock.Application/DTOs/CurrentUserDto.cs` — change `int Id` to `string Id`: `public record CurrentUserDto(string Id, string Name, string Abbreviation, string Role);`
+- [X] T040 Update `Backend/src/Modules/Mock/Mock.Application/Services/IMockService.cs` — update method signatures: `Task<PagedResponse<UserDto>> GetUsersAsync(string? searchText = null)` and `Task<CurrentUserDto> GetCurrentUserAsync(string userId)` (other 3 methods unchanged)
+- [X] T041 Update `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs`:
+  - Change all `int` Id literal values in the static `_users` and `_currentUser` fields to `string` (e.g. `"1"`, `"2"`, etc.)
+  - Update `GetUsersAsync()` signature to `GetUsersAsync(string? searchText = null)` — when `searchText` is non-null and non-whitespace, filter `_users` using `user.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)`; otherwise return the full list
+  - Update `GetCurrentUserAsync()` signature to `GetCurrentUserAsync(string userId)` — parameter is accepted for interface compliance; the method still returns the single static `_currentUser` record on every call
+- [X] T042 Refactor `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs`:
+  - Replace `[Route("api/mock")]` on the controller with `[Route("api")]`
+  - Replace `[HttpGet("users")]` with `[HttpGet("dashboard/listOfUsers")]`; update parameter to `[FromQuery] string? searchText = null`; forward `searchText` to `_service.GetUsersAsync(searchText)`
+  - Replace `[HttpGet("current-user")]` with `[HttpGet("currentActiveUser/{userId}")]`; add `[FromRoute] string userId` parameter; forward to `_service.GetCurrentUserAsync(userId)`
+  - Replace `[HttpGet("client-requests")]` with `[HttpGet("dashboard/clientRequests")]`
+  - Replace `[HttpGet("signal-provider-requests")]` with `[HttpGet("dashboard/signalProviderRequests")]`
+  - Replace `[HttpGet("affiliate-requests")]` with `[HttpGet("dashboard/affiliateRequests")]`
+  - Update XML `<summary>` doc comments on all 5 actions to reflect the new purpose/routes
+- [X] T043 Update unit tests in `Backend/tests/Mock.Application.Tests/MockServiceTests.cs`:
+  - Update all `_service.GetUsersAsync()` calls to `_service.GetUsersAsync(null)` (or add `searchText: null` named arg)
+  - Update all `_service.GetCurrentUserAsync()` calls to `_service.GetCurrentUserAsync("1")` (using a valid mock user id)
+  - Add test: `GetUsersAsync(searchText: "nam")` returns only users whose name contains "nam" (case-insensitive)
+  - Add test: `GetUsersAsync(searchText: null)` and `GetUsersAsync(searchText: "")` both return the full user list
+- [X] T044 Update integration tests in `Backend/tests/Integration.Tests/Mock/MockTests.cs`:
+  - Replace `/api/mock/users` with `/api/dashboard/listOfUsers` in all test HTTP calls
+  - Replace `/api/mock/current-user` with `/api/currentActiveUser/1` (use the first mock user's string id) in all test HTTP calls
+  - Replace `/api/mock/client-requests` with `/api/dashboard/clientRequests`
+  - Replace `/api/mock/signal-provider-requests` with `/api/dashboard/signalProviderRequests`
+  - Replace `/api/mock/affiliate-requests` with `/api/dashboard/affiliateRequests`
+  - Update T035 Swagger path assertion keys: replace `/api/mock/users`, `/api/mock/current-user`, etc. with the 5 new path strings
+  - Update T036 non-Dev test URL from `/api/mock/users` to `/api/dashboard/listOfUsers`
+  - Add integration test: `GET /api/dashboard/listOfUsers?searchText={partialName}` → 200; returned users all have names containing the search text
+- [X] T045 Run `dotnet test` from `Backend/` and confirm all tests pass; resolve any compilation or assertion failures before marking complete
+
+**Checkpoint**: All Phase 9 tasks complete. Routes match CR-22. `dotnet test` passes with no failures or warnings.
+
+---
+
+## Phase 10: Generic Response Wrapping (`PagedResponse<T>`)
+
+**Purpose**: Wrap all four list endpoints in `PagedResponse<T>.All()` so responses follow the same envelope contract as `SubscriptionHistory`. The single-object `currentActiveUser` endpoint is intentionally NOT wrapped (it returns a plain `CurrentUserDto`).
+
+- [X] T046 [P] Add `global using CopyTradeMarketApi.Shared.Responses;` to `Backend/src/Modules/Mock/Mock.Application/GlobalUsings.cs`
+- [X] T047 [P] Update `Backend/src/Modules/Mock/Mock.Application/Services/IMockService.cs` — change return types: `GetUsersAsync` → `Task<PagedResponse<UserDto>>`, `GetClientRequestsAsync` → `Task<PagedResponse<ClientRequestDto>>`, `GetSignalProviderRequestsAsync` → `Task<PagedResponse<SignalProviderRequestDto>>`, `GetAffiliateRequestsAsync` → `Task<PagedResponse<AffiliateRequestDto>>`; `GetCurrentUserAsync` remains `Task<CurrentUserDto>`
+- [X] T048 Update `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — update the 4 list method return types to match the interface; each returns `Task.FromResult(PagedResponse<T>.All(<list>))` instead of `Task.FromResult(<list>)`
+- [X] T049 Update unit tests in `Backend/tests/Mock.Application.Tests/MockServiceTests.cs`: deserialize result as `PagedResponse<T>` and assert on `.Items`/`.TotalCount`; e.g. `result.Items.Count >= 5`, `result.TotalCount >= 5`, `result.Page == null`, `result.PageSize == null`
+- [X] T050 Update integration tests in `Backend/tests/Integration.Tests/Mock/MockTests.cs`: deserialize list responses as `PagedResponse<T>` and assert on `.Items` and `.TotalCount` instead of directly on the array
+- [X] T051 Run `dotnet test` from `Backend/` and confirm all tests pass
+
+**Checkpoint**: All list endpoints return `{ items: [...], totalCount: N, page: null, pageSize: null, totalPages: null }`. `currentActiveUser` continues to return a plain object. `dotnet test` passes.
+
+---
+
+## Phase 11: API-KEY Header Authentication for `currentActiveUser`
+
+**Purpose**: Remove the `{userId}` path parameter from `GET /api/currentActiveUser`; protect the endpoint with a dev-only `API-KEY` header check that returns 401 when the header is absent or has an unexpected value. The filter is retained in Production code but never executes (endpoint not registered outside Development — FR-011).
+
+**⚠️ PREREQUISITE**: T052–T053 (interface + service change) must land before T054–T055 (controller + filter) to avoid compilation failures.
+
+- [X] T052 [P] Update `Backend/src/Modules/Mock/Mock.Application/Services/IMockService.cs` — change `Task<CurrentUserDto> GetCurrentUserAsync(string userId)` to `Task<CurrentUserDto> GetCurrentUserAsync()` (remove `userId` parameter entirely)
+- [X] T053 [P] Update `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — change `public Task<CurrentUserDto> GetCurrentUserAsync(string userId)` to `public Task<CurrentUserDto> GetCurrentUserAsync()`; method body remains `Task.FromResult(_currentUser)`
+- [X] T054 Create `Backend/src/Shared/CopyTradeMarketApi.Shared/Filters/DevApiKeyFilter.cs` (shared library, not Mock-specific — reusable across all modules):
+  ```csharp
+  namespace CopyTradeMarketApi.Shared.Filters;
+
+  public class DevApiKeyFilter(IWebHostEnvironment env) : IActionFilter
+  {
+      private const string HeaderName = "API-KEY";
+      private const string ValidKey   = "SimulatedKeyForDev";
+
+      public void OnActionExecuting(ActionExecutingContext context)
+      {
+          if (!env.IsDevelopment()) return;
+          if (!context.HttpContext.Request.Headers.TryGetValue(HeaderName, out var key)
+              || key != ValidKey)
+              context.Result = new UnauthorizedResult();
+      }
+
+      public void OnActionExecuted(ActionExecutedContext context) { }
+  }
+  ```
+- [X] T055 Update `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs`:
+  - Change `[HttpGet("currentActiveUser/{userId}")]` to `[HttpGet("currentActiveUser")]`
+  - Remove `[FromRoute] string userId` parameter from the action
+  - Add `[ServiceFilter(typeof(DevApiKeyFilter))]` attribute on that action
+  - Change `service.GetCurrentUserAsync(userId)` to `service.GetCurrentUserAsync()`
+- [X] T056 Update `Backend/src/Modules/Mock/Mock.API/MockModule.cs` — add `services.AddScoped<DevApiKeyFilter>();` inside `RegisterServices` so the `ServiceFilter` can resolve it
+- [X] T057 Update `Backend/src/Modules/Mock/Mock.API/GlobalUsings.cs` — add `global using CopyTradeMarketApi.Shared.Filters;` (replaces earlier `global using Mock.API.Filters;` since filter moved to Shared)
+- [X] T058 Update unit tests in `Backend/tests/Mock.Application.Tests/MockServiceTests.cs` — change all 4 occurrences of `_service.GetCurrentUserAsync("1")` to `_service.GetCurrentUserAsync()` (no argument)
+- [X] T059 Update integration tests in `Backend/tests/Integration.Tests/Mock/MockTests.cs` (US2 happy-path class):
+  - Change all `GET /api/currentActiveUser/1` calls to `GET /api/currentActiveUser`
+  - Add `"API-KEY"` header with value `"SimulatedKeyForDev"` to all US2 happy-path requests (per-request via `HttpRequestMessage`)
+  - Added test: `GET /api/currentActiveUser` WITHOUT the `API-KEY` header → 401 Unauthorized
+  - Added test: `GET /api/currentActiveUser` with `API-KEY: wrong-key` → 401 Unauthorized
+- [X] T060 Run `dotnet test` from `Backend/` — 207 tests pass, 0 failures
+
+**Checkpoint**: `GET /api/currentActiveUser` (no path param) returns 200 with current user when `API-KEY: SimulatedKeyForDev` is sent in Development. Returns 401 when header is absent or incorrect. `dotnet test` passes with all tests green.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
