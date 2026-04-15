@@ -1,3 +1,3 @@
 namespace Mock.Application.DTOs;
 
-public record UserDto(int Id, string Name, string Role);
+public record UserDto(string Id, string Name, string Role);

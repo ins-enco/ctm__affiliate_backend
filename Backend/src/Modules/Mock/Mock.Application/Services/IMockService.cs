@@ -2,9 +2,9 @@ namespace Mock.Application.Services;
 
 public interface IMockService
 {
-    Task<List<UserDto>> GetUsersAsync();
+    Task<PagedResponse<UserDto>> GetUsersAsync(string? searchText = null);
     Task<CurrentUserDto> GetCurrentUserAsync();
-    Task<List<ClientRequestDto>> GetClientRequestsAsync();
-    Task<List<SignalProviderRequestDto>> GetSignalProviderRequestsAsync();
-    Task<List<AffiliateRequestDto>> GetAffiliateRequestsAsync();
+    Task<PagedResponse<ClientRequestDto>> GetClientRequestsAsync();
+    Task<PagedResponse<SignalProviderRequestDto>> GetSignalProviderRequestsAsync();
+    Task<PagedResponse<AffiliateRequestDto>> GetAffiliateRequestsAsync();
 }

@@ -23,40 +23,44 @@ public class MockTests : IClassFixture<MockWebFactory>
     [Fact]
     public async Task GetUsers_Returns200WithAtLeastFiveUsers()
     {
-        var resp = await _client.GetAsync("/api/mock/users");
+        var resp = await _client.GetAsync("/api/dashboard/listOfUsers");
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<List<UserDto>>();
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<UserDto>>();
         Assert.NotNull(body);
-        Assert.True(body.Count >= 5, $"Expected ≥5 users, got {body.Count}");
+        Assert.True(body.Items.Count >= 5, $"Expected ≥5 users, got {body.Items.Count}");
+        Assert.True(body.TotalCount >= 5);
+        Assert.Null(body.Page);
     }
 
     [Fact]
     public async Task GetUsers_CoversAllThreeRoles()
     {
-        var body = await _client.GetFromJsonAsync<List<UserDto>>("/api/mock/users");
+        var body = await _client.GetFromJsonAsync<PagedResponse<UserDto>>("/api/dashboard/listOfUsers");
 
         Assert.NotNull(body);
-        Assert.Contains(body, u => u.Role == "Client");
-        Assert.Contains(body, u => u.Role == "Signal Provider");
-        Assert.Contains(body, u => u.Role == "Affiliate");
+        Assert.Contains(body.Items, u => u.Role == "Client");
+        Assert.Contains(body.Items, u => u.Role == "Signal Provider");
+        Assert.Contains(body.Items, u => u.Role == "Affiliate");
     }
 
     [Fact]
     public async Task GetUsers_AllRolesFromAllowedSet()
     {
-        var body = await _client.GetFromJsonAsync<List<UserDto>>("/api/mock/users");
+        var body = await _client.GetFromJsonAsync<PagedResponse<UserDto>>("/api/dashboard/listOfUsers");
 
         Assert.NotNull(body);
-        Assert.All(body, u => Assert.Contains(u.Role, AllowedRoles));
+        Assert.All(body.Items, u => Assert.Contains(u.Role, AllowedRoles));
     }
 
-    // ── User Story 2: GET /api/mock/current-user ──────────────────────────────
+    // ── User Story 2: GET /api/currentActiveUser ─────────────────────────────
 
     [Fact]
     public async Task GetCurrentUser_Returns200WithSingleObject()
     {
-        var resp = await _client.GetAsync("/api/mock/current-user");
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/currentActiveUser");
+        req.Headers.Add("API-KEY", "SimulatedKeyForDev");
+        var resp = await _client.SendAsync(req);
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var body = await resp.Content.ReadFromJsonAsync<CurrentUserDto>();
@@ -66,7 +70,10 @@ public class MockTests : IClassFixture<MockWebFactory>
     [Fact]
     public async Task GetCurrentUser_AbbreviationIsExactlyTwoChars()
     {
-        var body = await _client.GetFromJsonAsync<CurrentUserDto>("/api/mock/current-user");
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/currentActiveUser");
+        req.Headers.Add("API-KEY", "SimulatedKeyForDev");
+        var resp = await _client.SendAsync(req);
+        var body = await resp.Content.ReadFromJsonAsync<CurrentUserDto>();
 
         Assert.NotNull(body);
         Assert.Equal(2, body.Abbreviation.Length);
@@ -75,76 +82,98 @@ public class MockTests : IClassFixture<MockWebFactory>
     [Fact]
     public async Task GetCurrentUser_RoleIsFromAllowedSet()
     {
-        var body = await _client.GetFromJsonAsync<CurrentUserDto>("/api/mock/current-user");
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/currentActiveUser");
+        req.Headers.Add("API-KEY", "SimulatedKeyForDev");
+        var resp = await _client.SendAsync(req);
+        var body = await resp.Content.ReadFromJsonAsync<CurrentUserDto>();
 
         Assert.NotNull(body);
         Assert.Contains(body.Role, AllowedRoles);
     }
 
-    // ── User Story 3: GET /api/mock/client-requests ───────────────────────────
+    [Fact]
+    public async Task GetCurrentUser_MissingApiKey_Returns401()
+    {
+        var resp = await _client.GetAsync("/api/currentActiveUser");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_WrongApiKey_Returns401()
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/currentActiveUser");
+        req.Headers.Add("API-KEY", "wrong-key");
+        var resp = await _client.SendAsync(req);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    // ── User Story 3: GET /api/dashboard/clientRequests ───────────────────────
 
     [Fact]
     public async Task GetClientRequests_Returns200WithExactlyTenRecords()
     {
-        var resp = await _client.GetAsync("/api/mock/client-requests");
+        var resp = await _client.GetAsync("/api/dashboard/clientRequests");
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<List<ClientRequestDto>>();
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<ClientRequestDto>>();
         Assert.NotNull(body);
-        Assert.Equal(10, body.Count);
+        Assert.Equal(10, body.Items.Count);
+        Assert.Equal(10, body.TotalCount);
     }
 
     [Fact]
     public async Task GetClientRequests_AllEquityValuesArePositive()
     {
-        var body = await _client.GetFromJsonAsync<List<ClientRequestDto>>("/api/mock/client-requests");
+        var body = await _client.GetFromJsonAsync<PagedResponse<ClientRequestDto>>("/api/dashboard/clientRequests");
 
         Assert.NotNull(body);
-        Assert.All(body, r => Assert.True(r.Equity > 0));
+        Assert.All(body.Items, r => Assert.True(r.Equity > 0));
     }
 
-    // ── User Story 4: GET /api/mock/signal-provider-requests ─────────────────
+    // ── User Story 4: GET /api/dashboard/signalProviderRequests ─────────────────
 
     [Fact]
     public async Task GetSignalProviderRequests_Returns200WithExactlyTenRecords()
     {
-        var resp = await _client.GetAsync("/api/mock/signal-provider-requests");
+        var resp = await _client.GetAsync("/api/dashboard/signalProviderRequests");
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<List<SignalProviderRequestDto>>();
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SignalProviderRequestDto>>();
         Assert.NotNull(body);
-        Assert.Equal(10, body.Count);
+        Assert.Equal(10, body.Items.Count);
     }
 
     [Fact]
     public async Task GetSignalProviderRequests_AllKycStatusesFromAllowedSet()
     {
-        var body = await _client.GetFromJsonAsync<List<SignalProviderRequestDto>>("/api/mock/signal-provider-requests");
+        var body = await _client.GetFromJsonAsync<PagedResponse<SignalProviderRequestDto>>("/api/dashboard/signalProviderRequests");
 
         Assert.NotNull(body);
-        Assert.All(body, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
+        Assert.All(body.Items, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
     }
 
-    // ── User Story 5: GET /api/mock/affiliate-requests ────────────────────────
+    // ── User Story 5: GET /api/dashboard/affiliateRequests ────────────────────────
 
     [Fact]
     public async Task GetAffiliateRequests_Returns200WithExactlyTenRecords()
     {
-        var resp = await _client.GetAsync("/api/mock/affiliate-requests");
+        var resp = await _client.GetAsync("/api/dashboard/affiliateRequests");
 
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<List<AffiliateRequestDto>>();
+        var body = await resp.Content.ReadFromJsonAsync<PagedResponse<AffiliateRequestDto>>();
         Assert.NotNull(body);
-        Assert.Equal(10, body.Count);
+        Assert.Equal(10, body.Items.Count);
     }
 
     [Fact]
     public async Task GetAffiliateRequests_AllKycStatusesFromAllowedSet()
     {
-        var body = await _client.GetFromJsonAsync<List<AffiliateRequestDto>>("/api/mock/affiliate-requests");
+        var body = await _client.GetFromJsonAsync<PagedResponse<AffiliateRequestDto>>("/api/dashboard/affiliateRequests");
 
         Assert.NotNull(body);
-        Assert.All(body, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
+        Assert.All(body.Items, r => Assert.Contains(r.KycStatus, AllowedKycStatuses));
     }
 
     // ── Phase 8: Swagger ─────────────────────────────────────────────────────
@@ -158,11 +187,11 @@ public class MockTests : IClassFixture<MockWebFactory>
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(body.TryGetProperty("paths", out var paths));
 
-        Assert.True(paths.TryGetProperty("/api/mock/users",                      out _), "Missing /api/mock/users");
-        Assert.True(paths.TryGetProperty("/api/mock/current-user",               out _), "Missing /api/mock/current-user");
-        Assert.True(paths.TryGetProperty("/api/mock/client-requests",            out _), "Missing /api/mock/client-requests");
-        Assert.True(paths.TryGetProperty("/api/mock/signal-provider-requests",   out _), "Missing /api/mock/signal-provider-requests");
-        Assert.True(paths.TryGetProperty("/api/mock/affiliate-requests",         out _), "Missing /api/mock/affiliate-requests");
+        Assert.True(paths.TryGetProperty("/api/dashboard/listOfUsers",           out _), "Missing /api/dashboard/listOfUsers");
+        Assert.True(paths.TryGetProperty("/api/currentActiveUser",                out _), "Missing /api/currentActiveUser");
+        Assert.True(paths.TryGetProperty("/api/dashboard/clientRequests",          out _), "Missing /api/dashboard/clientRequests");
+        Assert.True(paths.TryGetProperty("/api/dashboard/signalProviderRequests",  out _), "Missing /api/dashboard/signalProviderRequests");
+        Assert.True(paths.TryGetProperty("/api/dashboard/affiliateRequests",       out _), "Missing /api/dashboard/affiliateRequests");
     }
 }
 
@@ -182,7 +211,7 @@ public class MockNonDevTests : IClassFixture<IntegrationWebFactory>
     [Fact]
     public async Task GetUsers_NonDevelopmentEnvironment_Returns404()
     {
-        var resp = await _client.GetAsync("/api/mock/users");
+        var resp = await _client.GetAsync("/api/dashboard/listOfUsers");
 
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
@@ -190,7 +219,7 @@ public class MockNonDevTests : IClassFixture<IntegrationWebFactory>
     [Fact]
     public async Task GetCurrentUser_NonDevelopmentEnvironment_Returns404()
     {
-        var resp = await _client.GetAsync("/api/mock/current-user");
+        var resp = await _client.GetAsync("/api/currentActiveUser");
 
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }

@@ -7,6 +7,7 @@ public class MockModule : IModule
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IMockService, MockService>();
+        services.AddScoped<DevApiKeyFilter>();
     }
 
     /// <inheritdoc />

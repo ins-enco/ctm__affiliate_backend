@@ -1,53 +1,58 @@
-# Contract: GET /api/mock/users
+# Contract: GET /api/dashboard/listOfUsers
 
-**Feature**: [spec.md](../spec.md) — FR-001, FR-007, SC-003, SC-004, SC-005
+**Feature**: [spec.md](../spec.md) — FR-001, FR-007, FR-012, SC-003, SC-004, SC-005
 
 ## Endpoint
 
 | Property | Value |
 |----------|-------|
 | Method | `GET` |
-| Path | `/api/mock/users` |
+| Path | `/api/dashboard/listOfUsers` |
 | Auth | None |
-| Query Parameters | None (ignored if supplied) |
+| Query Parameters | `searchText` (optional, string) — case-insensitive partial match on user name; absent or empty returns all users |
 
 ## Response — 200 OK
 
-Returns an array of user records.
+Returns a `PagedResponse<UserDto>` (non-paginated envelope).
 
 ```json
-[
-  {
-    "id": 1,
-    "name": "Carlos Silva",
-    "role": "Signal Provider"
-  },
-  {
-    "id": 2,
-    "name": "Ana Costa",
-    "role": "Affiliate"
-  },
-  {
-    "id": 3,
-    "name": "John Doe",
-    "role": "Client"
-  }
-]
+{
+  "items": [
+    { "id": "1", "name": "Carlos Silva", "role": "Signal Provider" },
+    { "id": "2", "name": "Ana Costa",    "role": "Affiliate" },
+    { "id": "3", "name": "John Doe",     "role": "Client" }
+  ],
+  "totalCount": 10,
+  "page": null,
+  "pageSize": null,
+  "totalPages": null
+}
 ```
 
-### Schema
+### Schema — Envelope
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `items` | array of UserDto | see below |
+| `totalCount` | integer | count of records in this response |
+| `page` | null | not paginated |
+| `pageSize` | null | not paginated |
+| `totalPages` | null | not paginated |
+
+### Schema — UserDto
 
 | Field | Type | Constraints |
 |-------|------|-------------|
-| `id` | integer | positive, unique |
+| `id` | string | non-empty, unique mock identifier |
 | `name` | string | non-empty |
 | `role` | string | one of: `Client`, `Signal Provider`, `Affiliate` |
 
 ### Guarantees
 
-- The array contains at least 5 records on every call.
-- All three role values (`Client`, `Signal Provider`, `Affiliate`) appear at least once.
-- Response is deterministic — identical on every call.
+- Without `searchText`: `items` contains all 10 mock users; all three role values appear at least once.
+- With `searchText`: `items` contains only users whose name contains the search text (case-insensitive). Returns empty `items` if no match.
+- `totalCount` always equals `items.length`.
+- Response is deterministic for the same input.
 
 ## Error Responses
 

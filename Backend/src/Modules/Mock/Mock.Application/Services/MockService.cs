@@ -10,22 +10,22 @@ public class MockService : IMockService
 
     private static readonly List<UserDto> _users =
     [
-        new(1,  "Carlos Silva",    "Signal Provider"),
-        new(2,  "Ana Costa",       "Affiliate"),
-        new(3,  "John Doe",        "Client"),
-        new(4,  "Maria Santos",    "Client"),
-        new(5,  "Pedro Oliveira",  "Affiliate"),
-        new(6,  "Yuki Tanaka",     "Signal Provider"),
-        new(7,  "Sofia Andrade",   "Client"),
-        new(8,  "Marco Rossi",     "Signal Provider"),
-        new(9,  "Li Wei",          "Affiliate"),
-        new(10, "Emma Wilson",     "Client"),
+        new("1",  "Carlos Silva",    "Signal Provider"),
+        new("2",  "Ana Costa",       "Affiliate"),
+        new("3",  "John Doe",        "Client"),
+        new("4",  "Maria Santos",    "Client"),
+        new("5",  "Pedro Oliveira",  "Affiliate"),
+        new("6",  "Yuki Tanaka",     "Signal Provider"),
+        new("7",  "Sofia Andrade",   "Client"),
+        new("8",  "Marco Rossi",     "Signal Provider"),
+        new("9",  "Li Wei",          "Affiliate"),
+        new("10", "Emma Wilson",     "Client"),
     ];
 
     // ── Current Active User ───────────────────────────────────────────────────
 
     private static readonly CurrentUserDto _currentUser =
-        new(1, "Carlos Silva", "CS", "Signal Provider");
+        new("1", "Carlos Silva", "CS", "Signal Provider");
 
     // ── Client Requests ───────────────────────────────────────────────────────
 
@@ -77,18 +77,23 @@ public class MockService : IMockService
 
     // ── IMockService ──────────────────────────────────────────────────────────
 
-    public Task<List<UserDto>> GetUsersAsync()
-        => Task.FromResult(_users);
+    public Task<PagedResponse<UserDto>> GetUsersAsync(string? searchText = null)
+    {
+        var filtered = string.IsNullOrWhiteSpace(searchText)
+            ? _users
+            : _users.Where(u => u.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+        return Task.FromResult(PagedResponse<UserDto>.All(filtered));
+    }
 
     public Task<CurrentUserDto> GetCurrentUserAsync()
         => Task.FromResult(_currentUser);
 
-    public Task<List<ClientRequestDto>> GetClientRequestsAsync()
-        => Task.FromResult(_clientRequests);
+    public Task<PagedResponse<ClientRequestDto>> GetClientRequestsAsync()
+        => Task.FromResult(PagedResponse<ClientRequestDto>.All(_clientRequests));
 
-    public Task<List<SignalProviderRequestDto>> GetSignalProviderRequestsAsync()
-        => Task.FromResult(_signalProviderRequests);
+    public Task<PagedResponse<SignalProviderRequestDto>> GetSignalProviderRequestsAsync()
+        => Task.FromResult(PagedResponse<SignalProviderRequestDto>.All(_signalProviderRequests));
 
-    public Task<List<AffiliateRequestDto>> GetAffiliateRequestsAsync()
-        => Task.FromResult(_affiliateRequests);
+    public Task<PagedResponse<AffiliateRequestDto>> GetAffiliateRequestsAsync()
+        => Task.FromResult(PagedResponse<AffiliateRequestDto>.All(_affiliateRequests));
 }
