@@ -33,11 +33,15 @@ builder.Host.UseSerilog();
 // Collect all modules
 var modules = new List<IModule>
 {
-    new AuthModule(),       // Step 2
-    new TrackingModule(),   // Step 3
-    new AffiliateModule(),            // Step 4
-    new SubscriptionHistoryModule()   // Step 5
+    new AuthModule(),               // Step 2
+    new TrackingModule(),           // Step 3
+    new AffiliateModule(),          // Step 4
+    new SubscriptionHistoryModule() // Step 5
 };
+
+// Step 5a — Mock module registered in Development only (FR-011)
+if (builder.Environment.IsDevelopment())
+    modules.Add(new MockModule());
 
 // Step 5 — In-memory cache + cache abstraction
 builder.Services.AddMemoryCache();
@@ -105,11 +109,27 @@ foreach (var module in modules)
     module.RegisterServices(builder.Services, builder.Configuration);
 
 // Controllers auto-discover from all module assemblies
-builder.Services.AddControllers()
+var mvcBuilder = builder.Services.AddControllers()
     .AddApplicationPart(typeof(AuthModule).Assembly)
     .AddApplicationPart(typeof(TrackingModule).Assembly)
     .AddApplicationPart(typeof(AffiliateModule).Assembly)
     .AddApplicationPart(typeof(SubscriptionHistoryModule).Assembly);
+
+// Mock module: only expose controllers in Development (FR-011).
+// The assembly is a direct project reference so it's auto-added to ApplicationParts;
+// explicitly remove it in non-Development environments so routes return 404.
+if (!builder.Environment.IsDevelopment())
+{
+    mvcBuilder.ConfigureApplicationPartManager(apm =>
+    {
+        var mockAssembly = typeof(MockModule).Assembly;
+        var part = apm.ApplicationParts
+            .OfType<Microsoft.AspNetCore.Mvc.ApplicationParts.AssemblyPart>()
+            .FirstOrDefault(p => p.Assembly == mockAssembly);
+        if (part != null)
+            apm.ApplicationParts.Remove(part);
+    });
+}
 
 // Override model validation response: return 403 with field-level errors map
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -141,12 +161,19 @@ using (var scope = app.Services.CreateScope())
     var affiliateDb = sp.GetRequiredService<AffiliateDbContext>();
     var trackingDb  = sp.GetRequiredService<TrackingDbContext>();
 
-    // MigrateAsync only applies to MySQL (Pomelo). SQLite uses EnsureCreated in IntegrationWebFactory.
     if (authDb.Database.ProviderName?.Contains("MySql", StringComparison.OrdinalIgnoreCase) == true)
     {
+        // MySQL (production): run EF migrations
         await authDb.Database.MigrateAsync();
         await affiliateDb.Database.MigrateAsync();
         await trackingDb.Database.MigrateAsync();
+    }
+    else
+    {
+        // SQLite (integration tests): EnsureCreated so schema exists before DevDataSeeder runs
+        authDb.Database.EnsureCreated();
+        affiliateDb.Database.EnsureCreated();
+        trackingDb.Database.EnsureCreated();
     }
 }
 

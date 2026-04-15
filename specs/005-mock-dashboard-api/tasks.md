@@ -29,13 +29,13 @@
 
 **Purpose**: Create the three new projects and wire the host reference
 
-- [ ] T001 Create `Backend/src/Modules/Mock/Mock.Application/Mock.Application.csproj` — `net8.0`, `ImplicitUsings enable`, `Nullable enable`; `<ProjectReference>` to `CopyTradeMarketApi.Shared`
-- [ ] T002 [P] Create `Backend/src/Modules/Mock/Mock.API/Mock.API.csproj` — `net8.0`, `ImplicitUsings enable`, `Nullable enable`, `GenerateDocumentationFile true`; `<FrameworkReference Include="Microsoft.AspNetCore.App"/>`; `<ProjectReference>` to `Mock.Application`
-- [ ] T003 [P] Create `Backend/tests/Mock.Application.Tests/Mock.Application.Tests.csproj` — `net8.0`, `IsPackable false`; packages: `Microsoft.NET.Test.Sdk`, `xunit`, `xunit.runner.visualstudio`, `coverlet.collector`; `<ProjectReference>` to `Mock.Application`
-- [ ] T004 Add `<ProjectReference Include="..\..\Modules\Mock\Mock.API\Mock.API.csproj" />` to `Backend/src/Host/CopyTradeMarketApi.Host/CopyTradeMarketApi.Host.csproj`
-- [ ] T005 [P] Create `Backend/src/Modules/Mock/Mock.Application/GlobalUsings.cs` — `global using Mock.Application.DTOs;`
-- [ ] T006 [P] Create `Backend/src/Modules/Mock/Mock.API/GlobalUsings.cs` — global usings: `Microsoft.AspNetCore.Builder`, `Microsoft.AspNetCore.Mvc`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `Mock.Application.Services`, `CopyTradeMarketApi.Shared.Abstractions`
-- [ ] T007 [P] Create `Backend/tests/Mock.Application.Tests/GlobalUsings.cs` — `global using Mock.Application.Services;` and `global using Mock.Application.DTOs;`
+- [X] T001 Create `Backend/src/Modules/Mock/Mock.Application/Mock.Application.csproj` — `net8.0`, `ImplicitUsings enable`, `Nullable enable`; `<ProjectReference>` to `CopyTradeMarketApi.Shared`
+- [X] T002 [P] Create `Backend/src/Modules/Mock/Mock.API/Mock.API.csproj` — `net8.0`, `ImplicitUsings enable`, `Nullable enable`, `GenerateDocumentationFile true`; `<FrameworkReference Include="Microsoft.AspNetCore.App"/>`; `<ProjectReference>` to `Mock.Application`
+- [X] T003 [P] Create `Backend/tests/Mock.Application.Tests/Mock.Application.Tests.csproj` — `net8.0`, `IsPackable false`; packages: `Microsoft.NET.Test.Sdk`, `xunit`, `xunit.runner.visualstudio`, `coverlet.collector`; `<ProjectReference>` to `Mock.Application`
+- [X] T004 Add `<ProjectReference Include="..\..\Modules\Mock\Mock.API\Mock.API.csproj" />` to `Backend/src/Host/CopyTradeMarketApi.Host/CopyTradeMarketApi.Host.csproj`
+- [X] T005 [P] Create `Backend/src/Modules/Mock/Mock.Application/GlobalUsings.cs` — `global using Mock.Application.DTOs;`
+- [X] T006 [P] Create `Backend/src/Modules/Mock/Mock.API/GlobalUsings.cs` — global usings: `Microsoft.AspNetCore.Builder`, `Microsoft.AspNetCore.Mvc`, `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `Mock.Application.Services`, `CopyTradeMarketApi.Shared.Abstractions`
+- [X] T007 [P] Create `Backend/tests/Mock.Application.Tests/GlobalUsings.cs` — `global using Mock.Application.Services;` and `global using Mock.Application.DTOs;`
 
 **Checkpoint**: Three new projects compile. Host references `Mock.API`.
 
@@ -47,17 +47,17 @@
 
 **⚠️ CRITICAL**: All user story work and integration tests depend on this phase being complete.
 
-- [ ] T008 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/UserDto.cs` — `public record UserDto(int Id, string Name, string Role);`
-- [ ] T009 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/CurrentUserDto.cs` — `public record CurrentUserDto(int Id, string Name, string Abbreviation, string Role);`
-- [ ] T010 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/ClientRequestDto.cs` — `public record ClientRequestDto(DateTime Timestamp, string Name, decimal Equity, string Strategy, string StrategyLicense);`
-- [ ] T011 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/SignalProviderRequestDto.cs` — `public record SignalProviderRequestDto(DateTime Timestamp, string Name, string KycStatus);`
-- [ ] T012 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/AffiliateRequestDto.cs` — `public record AffiliateRequestDto(DateTime Timestamp, string Name, string KycStatus);`
-- [ ] T013 Create `Backend/src/Modules/Mock/Mock.Application/Services/IMockService.cs` — interface with 5 methods: `Task<List<UserDto>> GetUsersAsync()`, `Task<CurrentUserDto> GetCurrentUserAsync()`, `Task<List<ClientRequestDto>> GetClientRequestsAsync()`, `Task<List<SignalProviderRequestDto>> GetSignalProviderRequestsAsync()`, `Task<List<AffiliateRequestDto>> GetAffiliateRequestsAsync()`
-- [ ] T014 Create `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — skeleton `public class MockService : IMockService` with all 5 methods returning `Task.FromResult(new List<...>())` or `Task.FromResult<CurrentUserDto>(null!)` (stubs; full data added per story)
-- [ ] T015 Create `Backend/src/Modules/Mock/Mock.API/MockModule.cs` — `public class MockModule : IModule` with `RegisterServices` calling `services.AddSingleton<IMockService, MockService>()` and empty `MapEndpoints`
-- [ ] T016 Create `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs` — `[ApiController] [Route("api/mock")]` with primary constructor `(IMockService service)`; 5 stub actions: `[HttpGet("users")]`, `[HttpGet("current-user")]`, `[HttpGet("client-requests")]`, `[HttpGet("signal-provider-requests")]`, `[HttpGet("affiliate-requests")]` — each calls the matching service method and returns `Ok(result)`
-- [ ] T017 Wire `MockModule` into `Backend/src/Host/CopyTradeMarketApi.Host/Program.cs`: (1) capture `IMvcBuilder` from `AddControllers()` call; (2) conditionally add `modules.Add(new MockModule())` and `mvcBuilder.AddApplicationPart(typeof(MockModule).Assembly)` inside `if (builder.Environment.IsDevelopment())` block — before `builder.Build()`
-- [ ] T018 [P] Create `Backend/tests/Integration.Tests/Mock/MockWebFactory.cs` — `public class MockWebFactory : WebApplicationFactory<Program>` with `UseEnvironment("Development")` and the same `ConfigureAppConfiguration` + `ConfigureTestServices` (SQLite DbContexts, JwtSettings override, JWT Bearer PostConfigure) as `IntegrationWebFactory`, plus `CreateHost` that calls `EnsureCreated()` on all three DbContexts
+- [X] T008 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/UserDto.cs` — `public record UserDto(int Id, string Name, string Role);`
+- [X] T009 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/CurrentUserDto.cs` — `public record CurrentUserDto(int Id, string Name, string Abbreviation, string Role);`
+- [X] T010 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/ClientRequestDto.cs` — `public record ClientRequestDto(DateTime Timestamp, string Name, decimal Equity, string Strategy, string StrategyLicense);`
+- [X] T011 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/SignalProviderRequestDto.cs` — `public record SignalProviderRequestDto(DateTime Timestamp, string Name, string KycStatus);`
+- [X] T012 [P] Create `Backend/src/Modules/Mock/Mock.Application/DTOs/AffiliateRequestDto.cs` — `public record AffiliateRequestDto(DateTime Timestamp, string Name, string KycStatus);`
+- [X] T013 Create `Backend/src/Modules/Mock/Mock.Application/Services/IMockService.cs` — interface with 5 methods: `Task<List<UserDto>> GetUsersAsync()`, `Task<CurrentUserDto> GetCurrentUserAsync()`, `Task<List<ClientRequestDto>> GetClientRequestsAsync()`, `Task<List<SignalProviderRequestDto>> GetSignalProviderRequestsAsync()`, `Task<List<AffiliateRequestDto>> GetAffiliateRequestsAsync()`
+- [X] T014 Create `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — skeleton `public class MockService : IMockService` with all 5 methods returning `Task.FromResult(new List<...>())` or `Task.FromResult<CurrentUserDto>(null!)` (stubs; full data added per story)
+- [X] T015 Create `Backend/src/Modules/Mock/Mock.API/MockModule.cs` — `public class MockModule : IModule` with `RegisterServices` calling `services.AddSingleton<IMockService, MockService>()` and empty `MapEndpoints`
+- [X] T016 Create `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs` — `[ApiController] [Route("api/mock")]` with primary constructor `(IMockService service)`; 5 stub actions: `[HttpGet("users")]`, `[HttpGet("current-user")]`, `[HttpGet("client-requests")]`, `[HttpGet("signal-provider-requests")]`, `[HttpGet("affiliate-requests")]` — each calls the matching service method and returns `Ok(result)`
+- [X] T017 Wire `MockModule` into `Backend/src/Host/CopyTradeMarketApi.Host/Program.cs`: (1) capture `IMvcBuilder` from `AddControllers()` call; (2) conditionally add `modules.Add(new MockModule())` and `mvcBuilder.AddApplicationPart(typeof(MockModule).Assembly)` inside `if (builder.Environment.IsDevelopment())` block — before `builder.Build()`
+- [X] T018 [P] Create `Backend/tests/Integration.Tests/Mock/MockWebFactory.cs` — `public class MockWebFactory : WebApplicationFactory<Program>` with `UseEnvironment("Development")` and the same `ConfigureAppConfiguration` + `ConfigureTestServices` (SQLite DbContexts, JwtSettings override, JWT Bearer PostConfigure) as `IntegrationWebFactory`, plus `CreateHost` that calls `EnsureCreated()` on all three DbContexts
 
 **Checkpoint**: `dotnet build Backend/` succeeds. All 5 routes respond (with stub/empty data) when host runs in Development. Non-Development calls return 404 (module not registered).
 
@@ -69,9 +69,9 @@
 
 **Independent Test**: Call `GET /api/mock/users` with no parameters. Verify 200, array length ≥5, and the role values `Client`, `Signal Provider`, `Affiliate` each appear at least once.
 
-- [ ] T019 [US1] Implement `GetUsersAsync()` in `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — private static readonly `List<UserDto>` with ≥5 entries covering all three role values; method returns `Task.FromResult(_users)`
-- [ ] T020 [P] [US1] Create `Backend/tests/Mock.Application.Tests/MockServiceTests.cs` with unit tests for `GetUsersAsync`: (a) count ≥5; (b) all three roles present (`Client`, `Signal Provider`, `Affiliate`); (c) every `Role` is in the allowed set
-- [ ] T021 [P] [US1] Create `Backend/tests/Integration.Tests/Mock/MockTests.cs` with `IClassFixture<MockWebFactory>`; test: `GET /api/mock/users` → 200, body deserializes as `List<UserDto>` (not null), count ≥5, all three roles present
+- [X] T019 [US1] Implement `GetUsersAsync()` in `Backend/src/Modules/Mock/Mock.Application/Services/MockService.cs` — private static readonly `List<UserDto>` with ≥5 entries covering all three role values; method returns `Task.FromResult(_users)`
+- [X] T020 [P] [US1] Create `Backend/tests/Mock.Application.Tests/MockServiceTests.cs` with unit tests for `GetUsersAsync`: (a) count ≥5; (b) all three roles present (`Client`, `Signal Provider`, `Affiliate`); (c) every `Role` is in the allowed set
+- [X] T021 [P] [US1] Create `Backend/tests/Integration.Tests/Mock/MockTests.cs` with `IClassFixture<MockWebFactory>`; test: `GET /api/mock/users` → 200, body deserializes as `List<UserDto>` (not null), count ≥5, all three roles present
 
 **Checkpoint**: US1 fully functional and independently testable. `dotnet test` for `Mock.Application.Tests` and `Integration.Tests --filter Mock` passes.
 
@@ -83,9 +83,9 @@
 
 **Independent Test**: Call `GET /api/mock/current-user`. Verify 200, response is a single JSON object (not an array), `abbreviation` field is exactly 2 characters, `role` is from the allowed set.
 
-- [ ] T022 [US2] Implement `GetCurrentUserAsync()` in `MockService.cs` — private static readonly `CurrentUserDto` instance with `id`, `name`, `abbreviation` (exactly 2 uppercase chars — e.g., `"CS"` for `"Carlos Silva"`), and `role`; method returns `Task.FromResult(_currentUser)`
-- [ ] T023 [P] [US2] Add unit tests for `GetCurrentUserAsync` to `MockServiceTests.cs`: (a) returns non-null; (b) `Abbreviation.Length == 2`; (c) `Role` is in `["Client","Signal Provider","Affiliate"]`
-- [ ] T024 [P] [US2] Add integration test to `MockTests.cs`: `GET /api/mock/current-user` → 200; deserialize as `CurrentUserDto`; `Abbreviation.Length == 2`
+- [X] T022 [US2] Implement `GetCurrentUserAsync()` in `MockService.cs` — private static readonly `CurrentUserDto` instance with `id`, `name`, `abbreviation` (exactly 2 uppercase chars — e.g., `"CS"` for `"Carlos Silva"`), and `role`; method returns `Task.FromResult(_currentUser)`
+- [X] T023 [P] [US2] Add unit tests for `GetCurrentUserAsync` to `MockServiceTests.cs`: (a) returns non-null; (b) `Abbreviation.Length == 2`; (c) `Role` is in `["Client","Signal Provider","Affiliate"]`
+- [X] T024 [P] [US2] Add integration test to `MockTests.cs`: `GET /api/mock/current-user` → 200; deserialize as `CurrentUserDto`; `Abbreviation.Length == 2`
 
 **Checkpoint**: US2 fully functional and independently testable.
 
@@ -97,9 +97,9 @@
 
 **Independent Test**: Call `GET /api/mock/client-requests`. Verify 200, exactly 10 records, all `equity` values > 0, all fields non-null.
 
-- [ ] T025 [US3] Implement `GetClientRequestsAsync()` in `MockService.cs` — private static readonly `List<ClientRequestDto>` with exactly 10 entries; all `Equity` values > 0 decimal; all `Timestamp` values `DateTime` with `DateTimeKind.Utc`
-- [ ] T026 [P] [US3] Add unit tests for `GetClientRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `Equity > 0`; (c) every record has non-empty `Name`, `Strategy`, `StrategyLicense`
-- [ ] T027 [P] [US3] Add integration test to `MockTests.cs`: `GET /api/mock/client-requests` → 200; count == 10; every `equity > 0`
+- [X] T025 [US3] Implement `GetClientRequestsAsync()` in `MockService.cs` — private static readonly `List<ClientRequestDto>` with exactly 10 entries; all `Equity` values > 0 decimal; all `Timestamp` values `DateTime` with `DateTimeKind.Utc`
+- [X] T026 [P] [US3] Add unit tests for `GetClientRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `Equity > 0`; (c) every record has non-empty `Name`, `Strategy`, `StrategyLicense`
+- [X] T027 [P] [US3] Add integration test to `MockTests.cs`: `GET /api/mock/client-requests` → 200; count == 10; every `equity > 0`
 
 **Checkpoint**: US3 fully functional and independently testable.
 
@@ -111,9 +111,9 @@
 
 **Independent Test**: Call `GET /api/mock/signal-provider-requests`. Verify 200, exactly 10 records, every `kycStatus` is one of `Pending`, `Verified`, `Rejected`.
 
-- [ ] T028 [US4] Implement `GetSignalProviderRequestsAsync()` in `MockService.cs` — private static readonly `List<SignalProviderRequestDto>` with exactly 10 entries; every `KycStatus` ∈ `{"Pending","Verified","Rejected"}`; timestamps UTC
-- [ ] T029 [P] [US4] Add unit tests for `GetSignalProviderRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `KycStatus` in allowed set; (c) every record has non-empty `Name`
-- [ ] T030 [P] [US4] Add integration test to `MockTests.cs`: `GET /api/mock/signal-provider-requests` → 200; count == 10; every `kycStatus` in `["Pending","Verified","Rejected"]`
+- [X] T028 [US4] Implement `GetSignalProviderRequestsAsync()` in `MockService.cs` — private static readonly `List<SignalProviderRequestDto>` with exactly 10 entries; every `KycStatus` ∈ `{"Pending","Verified","Rejected"}`; timestamps UTC
+- [X] T029 [P] [US4] Add unit tests for `GetSignalProviderRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `KycStatus` in allowed set; (c) every record has non-empty `Name`
+- [X] T030 [P] [US4] Add integration test to `MockTests.cs`: `GET /api/mock/signal-provider-requests` → 200; count == 10; every `kycStatus` in `["Pending","Verified","Rejected"]`
 
 **Checkpoint**: US4 fully functional and independently testable.
 
@@ -125,9 +125,9 @@
 
 **Independent Test**: Call `GET /api/mock/affiliate-requests`. Verify 200, exactly 10 records, every `kycStatus` is one of `Pending`, `Verified`, `Rejected`.
 
-- [ ] T031 [US5] Implement `GetAffiliateRequestsAsync()` in `MockService.cs` — private static readonly `List<AffiliateRequestDto>` with exactly 10 entries; every `KycStatus` ∈ `{"Pending","Verified","Rejected"}`; timestamps UTC
-- [ ] T032 [P] [US5] Add unit tests for `GetAffiliateRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `KycStatus` in allowed set; (c) every record has non-empty `Name`
-- [ ] T033 [P] [US5] Add integration test to `MockTests.cs`: `GET /api/mock/affiliate-requests` → 200; count == 10; every `kycStatus` in `["Pending","Verified","Rejected"]`
+- [X] T031 [US5] Implement `GetAffiliateRequestsAsync()` in `MockService.cs` — private static readonly `List<AffiliateRequestDto>` with exactly 10 entries; every `KycStatus` ∈ `{"Pending","Verified","Rejected"}`; timestamps UTC
+- [X] T032 [P] [US5] Add unit tests for `GetAffiliateRequestsAsync` to `MockServiceTests.cs`: (a) count == 10; (b) every `KycStatus` in allowed set; (c) every record has non-empty `Name`
+- [X] T033 [P] [US5] Add integration test to `MockTests.cs`: `GET /api/mock/affiliate-requests` → 200; count == 10; every `kycStatus` in `["Pending","Verified","Rejected"]`
 
 **Checkpoint**: All 5 user stories functional. All unit and integration tests for US1–US5 pass.
 
@@ -137,10 +137,10 @@
 
 **Purpose**: Swagger docs, environment-gating test (FR-011 / SC-006), full test run
 
-- [ ] T034 [P] Add XML `<summary>` and `<returns>` doc comments to all 5 action methods in `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs` (Swagger UI description)
-- [ ] T035 [P] Add integration test to `MockTests.cs` using `MockWebFactory` (Development env): Swagger JSON at `GET /swagger/v1/swagger.json` → 200; `paths` object contains all 5 keys: `/api/mock/users`, `/api/mock/current-user`, `/api/mock/client-requests`, `/api/mock/signal-provider-requests`, `/api/mock/affiliate-requests`
-- [ ] T036 [P] Add non-Dev environment test to `MockTests.cs`: use `IntegrationWebFactory` (which sets `"Testing"` environment — not Development); `GET /api/mock/users` → 404 (FR-011: module not registered outside Development); name the class/region `MockNonDevTests`
-- [ ] T037 Run `dotnet test` from `Backend/` and confirm all tests pass; resolve any compilation or assertion failures before marking complete
+- [X] T034 [P] Add XML `<summary>` and `<returns>` doc comments to all 5 action methods in `Backend/src/Modules/Mock/Mock.API/Controllers/MockController.cs` (Swagger UI description)
+- [X] T035 [P] Add integration test to `MockTests.cs` using `MockWebFactory` (Development env): Swagger JSON at `GET /swagger/v1/swagger.json` → 200; `paths` object contains all 5 keys: `/api/mock/users`, `/api/mock/current-user`, `/api/mock/client-requests`, `/api/mock/signal-provider-requests`, `/api/mock/affiliate-requests`
+- [X] T036 [P] Add non-Dev environment test to `MockTests.cs`: use `IntegrationWebFactory` (which sets `"Testing"` environment — not Development); `GET /api/mock/users` → 404 (FR-011: module not registered outside Development); name the class/region `MockNonDevTests`
+- [X] T037 Run `dotnet test` from `Backend/` and confirm all tests pass; resolve any compilation or assertion failures before marking complete
 
 ---
 

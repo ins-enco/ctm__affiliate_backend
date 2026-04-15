@@ -6,6 +6,7 @@
     <ProjectReference Include="..\..\Modules\Tracking\Tracking.API\Tracking.API.csproj" />
     <ProjectReference Include="..\..\Modules\Affiliate\Affiliate.API\Affiliate.API.csproj" />
     <ProjectReference Include="..\..\Modules\SubscriptionHistory\SubscriptionHistory.API\SubscriptionHistory.API.csproj" />
+    <ProjectReference Include="..\..\Modules\Mock\Mock.API\Mock.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,6 +10,7 @@ global using Serilog;
 global using Serilog.Sinks.Grafana.Loki;
 global using Tracking.API;
 global using SubscriptionHistory.API;
+global using Mock.API;
 global using CopyTradeMarketApi.Shared.Exceptions;
 global using Microsoft.AspNetCore.Mvc;
 global using Affiliate.Infrastructure.Persistence;
