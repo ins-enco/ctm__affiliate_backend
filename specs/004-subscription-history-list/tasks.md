@@ -31,10 +31,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [X] T005 [P] Create `SubscriptionHistoryItem` record in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/DTOs/SubscriptionHistoryItem.cs` with fields: `DateTime Timestamp`, `string ClientName`, `string AccountNumber`, `string StrategyName`, `decimal EquityConnect`, `decimal? EquityDisconnect`, `string ActionType`
+- [X] T005 [P] Create `SubscriptionHistoryItem` record in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/DTOs/SubscriptionHistoryItem.cs` with fields: `int Id`, `DateTime Timestamp`, `string ClientName`, `string AccountNumber`, `string StrategyName`, `decimal EquityConnect`, `decimal? EquityDisconnect`, `string ActionType`, `string Status`
 - [X] T006 [P] Create `GlobalUsings.cs` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/GlobalUsings.cs` including `global using CopyTradeMarketApi.Shared.Responses;` so `PagedResponse<T>` is in scope across the project (no custom `SubscriptionHistoryResponse.cs` needed — spec 003 provides this via `PagedResponse<SubscriptionHistoryItem>`)
 - [X] T007 [P] Create `GlobalUsings.cs` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.API/GlobalUsings.cs` with API-level usings
-- [X] T008 Create `ISubscriptionHistoryService` interface in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/Services/ISubscriptionHistoryService.cs` with single method: `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize)`
+- [X] T008 Create `ISubscriptionHistoryService` interface in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/Services/ISubscriptionHistoryService.cs` with single method: `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize, string? query, string? statusFilter, DateTime? fromDate, DateTime? toDate, string? orderBy, string? orderDirection)`
 - [X] T009 Create `SubscriptionHistoryModule.cs` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.API/SubscriptionHistoryModule.cs` implementing `IModule`; register `ISubscriptionHistoryService` as singleton and map controller routes
 - [X] T010 Add project reference to `SubscriptionHistory.API` in `Backend/src/Host/CopyTradeMarketApi.Host/CopyTradeMarketApi.Host.csproj` and register `SubscriptionHistoryModule` in `Program.cs` alongside existing modules
 
@@ -44,21 +44,21 @@
 
 ## Phase 3: User Story 1 — Retrieve All Subscription History (Priority: P1) 🎯 MVP
 
-**Goal**: `GET /api/subscription-history` with no query parameters returns all 20 mocked records in a consistent response envelope with `page`/`pageSize`/`totalPages` as `null`.
+**Goal**: `GET /api/subscription-history` with no query parameters returns all 100 mocked records in a consistent response envelope with `page`/`pageSize`/`totalPages` as `null`.
 
-**Independent Test**: Call `GET /api/subscription-history` with no params → verify 200 OK, `items` array length equals 20, `totalCount` equals 20, `page` is `null`, `pageSize` is `null`, `totalPages` is `null`, records are newest-first.
+**Independent Test**: Call `GET /api/subscription-history` with no params → verify 200 OK, `items` array length equals 100, `totalCount` equals 100, `page` is `null`, `pageSize` is `null`, `totalPages` is `null`, records are newest-first.
 
 ### Tests for User Story 1
 
-- [X] T011 [US1] Add test method `GetAsync_WithNoPagination_ReturnsAllRecords` to `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`: construct `SubscriptionHistoryService` directly; call `GetAsync(null, null)`; assert `Items.Count == 20`, `TotalCount == 20`, `Page == null`, `PageSize == null`, `TotalPages == null`
-- [X] T012 [US1] Add integration test `GetSubscriptionHistory_NoPagination_Returns200WithAllRecords` to `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`: GET `/api/subscription-history`; assert 200, deserialize response, verify `items.Count == 20`, `totalCount == 20`, `page == null`
+- [X] T011 [US1] Add test method `GetAsync_WithNoPagination_ReturnsAllRecords` to `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`: construct `SubscriptionHistoryService` directly; call `GetAsync(null, null)`; assert `Items.Count == 100`, `TotalCount == 100`, `Page == null`, `PageSize == null`, `TotalPages == null`
+- [X] T012 [US1] Add integration test `GetSubscriptionHistory_NoPagination_Returns200WithAllRecords` to `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`: GET `/api/subscription-history`; assert 200, deserialize response, verify `items.Count == 100`, `totalCount == 100`, `page == null`
 
 ### Implementation for User Story 1
 
-- [X] T013 [US1] Implement `SubscriptionHistoryService` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/Services/SubscriptionHistoryService.cs`: initialize a private `static readonly IReadOnlyList<SubscriptionHistoryItem>` with 20 mocked records sorted newest-first (mix of Subscribe/Unsubscribe, at least 3 distinct client names and strategies, `EquityDisconnect` null for Subscribe rows); `GetAsync(null, null)` returns `PagedResponse<SubscriptionHistoryItem>.All(mockedList)` — page/pageSize/totalPages are null
+- [X] T013 [US1] Implement `SubscriptionHistoryService` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/Services/SubscriptionHistoryService.cs`: initialize a private `static readonly IReadOnlyList<SubscriptionHistoryItem>` with 100 mocked records sorted newest-first (mix of Subscribe/Unsubscribe, multilingual client names, varied strategies and statuses, `EquityDisconnect` null for Subscribe rows); `GetAsync(null, null)` returns `PagedResponse<SubscriptionHistoryItem>.All(mockedList)` — page/pageSize/totalPages are null
 - [X] T014 [US1] Create `SubscriptionHistoryController` in `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.API/Controllers/SubscriptionHistoryController.cs` with route `[Route("api/subscription-history")]`; inject `ISubscriptionHistoryService`; add `[HttpGet]` action accepting `[FromQuery] int? page = null` and `[FromQuery] int? pageSize = null`; call `GetAsync` and return `Ok(result)`
 
-**Checkpoint**: `dotnet test` passes T011 and T012. Swagger UI shows `GET /api/subscription-history`. Manual call returns 20 records with null pagination fields.
+**Checkpoint**: `dotnet test` passes T011 and T012. Swagger UI shows `GET /api/subscription-history`. Manual call returns 100 records with null pagination fields.
 
 ---
 
@@ -66,22 +66,22 @@
 
 **Goal**: `GET /api/subscription-history?page=1&pageSize=5` returns the correct slice of records with fully populated `page`, `pageSize`, `totalPages`, and `totalCount` fields.
 
-**Independent Test**: Call `GET /api/subscription-history?page=1&pageSize=5` → verify 200 OK, `items` has 5 records, `totalCount == 20`, `page == 1`, `pageSize == 5`, `totalPages == 4`. Call with `page=0` → verify 400 ProblemDetails.
+**Independent Test**: Call `GET /api/subscription-history?page=1&pageSize=5` → verify 200 OK, `items` has 5 records, `totalCount == 100`, `page == 1`, `pageSize == 5`, `totalPages == 20`. Call with `page=0` → verify 400 ProblemDetails.
 
 ### Tests for User Story 2
 
 - [X] T015 [P] [US2] Add the following test methods to `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`:
-  - `GetAsync_WithPageAndPageSize_ReturnsCorrectSlice`: page=1, pageSize=5 → Items.Count==5, TotalCount==20, Page==1, PageSize==5, TotalPages==4
-  - `GetAsync_WithPageBeyondLast_ReturnsEmptyItems`: page=99, pageSize=10 → Items.Count==0, TotalCount==20, TotalPages==2
+  - `GetAsync_WithPageAndPageSize_ReturnsCorrectSlice`: page=1, pageSize=5 → Items.Count==5, TotalCount==100, Page==1, PageSize==5, TotalPages==20
+  - `GetAsync_WithPageBeyondLast_ReturnsEmptyItems`: page=999, pageSize=10 → Items.Count==0, TotalCount==100, TotalPages==10
   - `GetAsync_WithPageSizeOnly_DefaultsPageToOne`: pageSize=5 → Page==1, PageSize==5
   - `GetAsync_WithPageOnly_DefaultsPageSizeToTwenty`: page=1 → PageSize==20
   - `GetAsync_WithZeroPage_ThrowsArgumentException`: GetAsync(0, 10) → throws `ArgumentException`
   - `GetAsync_WithZeroPageSize_ThrowsArgumentException`: GetAsync(1, 0) → throws `ArgumentException`
 - [X] T016 [P] [US2] Add integration test methods to `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`:
-  - `GetSubscriptionHistory_WithValidPagination_Returns200WithMetadata`: GET `?page=1&pageSize=5` → 200, items==5, totalCount==20, page==1, pageSize==5, totalPages==4
+  - `GetSubscriptionHistory_WithValidPagination_Returns200WithMetadata`: GET `?page=1&pageSize=5` → 200, items==5, totalCount==100, page==1, pageSize==5, totalPages==20
   - `GetSubscriptionHistory_WithZeroPage_Returns400ProblemDetails`: GET `?page=0&pageSize=10` → 400, ProblemDetails with detail message
   - `GetSubscriptionHistory_WithZeroPageSize_Returns400ProblemDetails`: GET `?page=1&pageSize=0` → 400, ProblemDetails with detail message
-  - `GetSubscriptionHistory_WithPageBeyondTotal_Returns200EmptyItems`: GET `?page=99&pageSize=10` → 200, items==[], totalCount==20
+  - `GetSubscriptionHistory_WithPageBeyondTotal_Returns200EmptyItems`: GET `?page=999&pageSize=10` → 200, items==[], totalCount==100
 
 ### Implementation for User Story 2
 
@@ -169,6 +169,59 @@
 
 ---
 
+## Phase 9: User Story 5 — Filter by Status (Priority: P2)
+
+**Goal**: `GET /api/subscription-history?statusFilter=Active` returns only records with `Status == "Active"` (case-insensitive), with correct total count.
+
+**Independent Test**: Call `GET /api/subscription-history?statusFilter=Active` → verify 200 OK, all returned items have `status == "Active"`, `totalCount` matches item count.
+
+### Tests for User Story 5
+
+- [ ] T032 [P] [US5] Add unit tests in `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`:
+  - `GetAsync_WithStatusFilter_ReturnsOnlyMatchingStatus`: statusFilter="Active" → all Items have Status=="Active", TotalCount matches
+  - `GetAsync_WithStatusFilter_CaseInsensitive`: statusFilter="active" → same results as "Active"
+  - `GetAsync_WithStatusFilter_UnknownValue_ReturnsEmpty`: statusFilter="Unknown" → Items.Count==0, TotalCount==0
+  - `GetAsync_WithStatusFilter_EmptyString_ReturnsAll`: statusFilter="" → same as no filter, all 100 records
+
+- [ ] T033 [P] [US5] Add integration tests in `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`:
+  - `GetSubscriptionHistory_WithStatusFilter_ReturnsOnlyMatchingStatus`: GET `?statusFilter=Pending` → 200, all items have status=="Pending"
+  - `GetSubscriptionHistory_WithStatusFilter_CombinedWithPagination`: GET `?statusFilter=Active&page=1&pageSize=5` → totalCount reflects filtered set, items ≤ 5
+
+### Implementation for User Story 5
+
+- [X] T034 [US5] `SubscriptionHistoryService.ApplyQueryStatus` already implemented; `ISubscriptionHistoryService` and `SubscriptionHistoryController` updated to expose `statusFilter` parameter — no further service code required.
+
+**Checkpoint**: `dotnet test` passes T032 and T033. GET `?statusFilter=Active` returns only Active records.
+
+---
+
+## Phase 10: User Story 6 — Filter by Date Range (Priority: P2)
+
+**Goal**: `GET /api/subscription-history?fromDate=2026-04-01&toDate=2026-04-13` returns only records whose `Timestamp` falls within the inclusive range.
+
+**Independent Test**: Call with known date bounds → verify only records in that range are returned with accurate total count.
+
+### Tests for User Story 6
+
+- [ ] T035 [P] [US6] Add unit tests in `Backend/tests/SubscriptionHistory.Application.Tests/SubscriptionHistoryServiceTests.cs`:
+  - `GetAsync_WithFromDate_ReturnsRecordsOnOrAfter`: fromDate=known date → all Items have Timestamp >= fromDate
+  - `GetAsync_WithToDate_ReturnsRecordsOnOrBefore`: toDate=known date → all Items have Timestamp <= toDate
+  - `GetAsync_WithFromDateAndToDate_ReturnsRecordsInRange`: both bounds → Items within range only
+  - `GetAsync_WithFromDateLaterThanToDate_ReturnsEmpty`: fromDate > toDate → Items.Count==0, TotalCount==0
+
+- [ ] T036 [P] [US6] Add integration tests in `Backend/tests/Integration.Tests/SubscriptionHistory/SubscriptionHistoryTests.cs`:
+  - `GetSubscriptionHistory_WithFromDateAndToDate_ReturnsRecordsInRange`: GET `?fromDate=2026-04-01&toDate=2026-04-13` → 200, all items within range
+  - `GetSubscriptionHistory_WithFromDateOnly_ReturnsRecordsOnOrAfter`: GET `?fromDate=2026-04-01` → 200, all items have Timestamp >= 2026-04-01
+  - `GetSubscriptionHistory_WithDateRange_CombinedWithStatusFilter`: GET `?fromDate=2026-04-01&statusFilter=Active` → both filters applied
+
+### Implementation for User Story 6
+
+- [X] T037 [US6] `SubscriptionHistoryService.ApplyDateRange` already implemented; `ISubscriptionHistoryService` and `SubscriptionHistoryController` updated to expose `fromDate` and `toDate` parameters — no further service code required.
+
+**Checkpoint**: `dotnet test` passes T035 and T036. Date-bounded requests return only matching records.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -180,6 +233,8 @@
 - **US3 (Phase 5)**: Depends on Phase 4 completion
 - **US4 (Phase 6)**: Depends on Phase 5 completion
 - **Polish (Phase 7)**: Depends on Phase 6 completion
+- **US5 — Status Filter (Phase 9)**: Implementation done (T034); tests (T032, T033) can be written any time after Phase 2
+- **US6 — Date Filter (Phase 10)**: Implementation done (T037); tests (T035, T036) can be written any time after Phase 2
 
 ### User Story Dependencies
 

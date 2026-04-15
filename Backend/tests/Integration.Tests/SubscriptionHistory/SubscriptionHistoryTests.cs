@@ -26,8 +26,8 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SubscriptionHistoryItem>>();
         Assert.NotNull(body);
-        Assert.Equal(20, body.Items.Count);
-        Assert.Equal(20, body.TotalCount);
+        Assert.Equal(100, body.Items.Count);
+        Assert.Equal(100, body.TotalCount);
         Assert.Null(body.Page);
         Assert.Null(body.PageSize);
         Assert.Null(body.TotalPages);
@@ -44,10 +44,10 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
         var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SubscriptionHistoryItem>>();
         Assert.NotNull(body);
         Assert.Equal(5, body.Items.Count);
-        Assert.Equal(20, body.TotalCount);
+        Assert.Equal(100, body.TotalCount);
         Assert.Equal(1, body.Page);
         Assert.Equal(5, body.PageSize);
-        Assert.Equal(4, body.TotalPages);
+        Assert.Equal(20, body.TotalPages);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
         var body = await resp.Content.ReadFromJsonAsync<PagedResponse<SubscriptionHistoryItem>>();
         Assert.NotNull(body);
         Assert.Empty(body.Items);
-        Assert.Equal(20, body.TotalCount);
+        Assert.Equal(100, body.TotalCount);
     }
 
     // ── User Story 3 ──────────────────────────────────────────────────────────
@@ -156,6 +156,9 @@ public class SubscriptionHistoryTests : IClassFixture<IntegrationWebFactory>
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         Assert.Contains("query", names);
+        Assert.Contains("statusFilter", names);
+        Assert.Contains("fromDate", names);
+        Assert.Contains("toDate", names);
         Assert.Contains("orderBy", names);
         Assert.Contains("orderDirection", names);
         Assert.Contains("page", names);

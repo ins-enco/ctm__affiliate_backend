@@ -1,10 +1,20 @@
+---
+id: 004-subscription-history-list
+version: 1.2.0
+status: in-review
+owners:
+  - tech-lead
+  - engineering
+last-reviewed: 2026-04-15
+---
+
 # Feature Specification: Subscription History List Endpoint
 
 **Feature Branch**: `004-subscription-history-list`  
 **Created**: 2026-04-13  
-**Updated**: 2026-04-13 (added filtering, ordering, and long-string mock-data coverage)  
+**Updated**: 2026-04-15 (added Status field, status filter, and date-range filter)  
 **Status**: Updated  
-**Input**: "create a endpoint to return a list of Subscription History (can mock the List instead of creating tables) add pagi, return all if client not ask for pagi" + "Update Spec 004 to contain query like and OrderBy also"
+**Input**: "create a endpoint to return a list of Subscription History (can mock the List instead of creating tables) add pagi, return all if client not ask for pagi" + "Update Spec 004 to contain query like and OrderBy also" + "add Filter by date and filter by Status"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -20,7 +30,7 @@ A client calls the subscription history endpoint without any parameters and rece
 
 1. **Given** a client sends a request with no parameters, **When** the endpoint is called, **Then** it returns all subscription history records with status 200 and a consistent data structure.
 2. **Given** the mocked dataset contains records with various action types (Subscribe/Unsubscribe), **When** the endpoint is called, **Then** all records are included in the response regardless of action type.
-3. **Given** the endpoint is called, **When** it responds, **Then** each record contains: timestamp, client name, account number, strategy name, equity connect amount, equity disconnect amount, and action type.
+3. **Given** the endpoint is called, **When** it responds, **Then** each record contains: id, timestamp, client name, account number, strategy name, equity connect amount, equity disconnect amount, action type, and status.
 4. **Given** no ordering parameter is provided, **When** the endpoint responds, **Then** records are returned newest first (descending timestamp).
 
 ---
@@ -77,6 +87,41 @@ A client provides an ordering field and/or direction and receives records sorted
 
 ---
 
+### User Story 5 - Filter Subscription History by Status (Priority: P2)
+
+A client provides a status value and receives only the subscription history records matching that status.
+
+**Why this priority**: Status filtering allows clients to quickly isolate records by lifecycle state (e.g., show only Active or Terminated subscriptions) without client-side filtering.
+
+**Independent Test**: Can be fully tested by supplying a `statusFilter` value that matches only a known subset of records and verifying only those records are returned with an accurate total count.
+
+**Acceptance Scenarios**:
+
+1. **Given** a client sends `statusFilter=Active`, **When** the endpoint is called, **Then** only records whose status equals "Active" (case-insensitive) are returned with status 200.
+2. **Given** a client sends a `statusFilter` value that matches no records, **When** the endpoint is called, **Then** it returns an empty list with status 200 and a total count of 0.
+3. **Given** `statusFilter` is combined with `query` and/or pagination, **When** the endpoint is called, **Then** both filters are applied before pagination and the total count reflects the doubly-filtered set.
+4. **Given** `statusFilter` is combined with `fromDate`/`toDate`, **When** the endpoint is called, **Then** only records matching both the status and the date range are returned.
+
+---
+
+### User Story 6 - Filter Subscription History by Date Range (Priority: P2)
+
+A client provides `fromDate` and/or `toDate` parameters and receives only the subscription history records whose timestamp falls within that range.
+
+**Why this priority**: Date-range filtering is essential for clients that display history within a specific time window (e.g., last 30 days) without loading the full dataset.
+
+**Independent Test**: Can be fully tested by supplying a `fromDate` and `toDate` that encompass a known subset of records and verifying only those records are returned with accurate total count.
+
+**Acceptance Scenarios**:
+
+1. **Given** a client sends `fromDate=2026-04-01`, **When** the endpoint is called, **Then** only records with a timestamp on or after 2026-04-01 are returned with status 200.
+2. **Given** a client sends `toDate=2026-03-31`, **When** the endpoint is called, **Then** only records with a timestamp on or before 2026-03-31 are returned.
+3. **Given** a client sends both `fromDate` and `toDate`, **When** the endpoint is called, **Then** only records with a timestamp within that inclusive range are returned.
+4. **Given** the date range matches no records, **When** the endpoint is called, **Then** it returns an empty list with status 200 and total count of 0.
+5. **Given** `fromDate`/`toDate` is combined with `query`, `statusFilter`, and pagination, **When** the endpoint is called, **Then** all filters are applied first, then ordering, then pagination (filter → sort → paginate).
+
+---
+
 ### Edge Cases
 
 - What happens when the mocked dataset is empty? The endpoint should return an empty list with total count of 0.
@@ -87,8 +132,13 @@ A client provides an ordering field and/or direction and receives records sorted
 - What happens when `query` is very long (100, 1,000, or 10,000 characters)? The endpoint should return a valid 200 response and apply normal filtering semantics.
 - What happens when `orderBy` is omitted? The default ordering is by timestamp descending (newest first).
 - What happens when `orderDirection` is provided without `orderBy`? The direction is applied to the default `timestamp` field.
-- What happens when all three features are combined (query + pagination + ordering)? Filter is applied first, then ordering, then pagination slice.
+- What happens when all filters are combined (query + statusFilter + fromDate + toDate + pagination + ordering)? Filters are applied first, then ordering, then pagination slice.
 - What happens when records contain multilingual Unicode values (e.g., German/French accents and Chinese/Hindi scripts) and very long generated values in `clientName` or `strategyName`? Filtering and ordering should still return stable, valid responses.
+- What happens when `statusFilter` is an empty string? It is treated as no status filter — all records are returned.
+- What happens when `statusFilter` is provided with a value that is not in the allowed set? The filter returns zero results (no 400 — unknown values simply match nothing).
+- What happens when `fromDate` is later than `toDate`? The intersection is empty — returns an empty list with total count of 0.
+- What happens when only `fromDate` is provided? Records on or after that date are returned; no upper bound.
+- What happens when only `toDate` is provided? Records on or before that date are returned; no lower bound.
 
 ## Requirements *(mandatory)*
 
@@ -98,7 +148,7 @@ A client provides an ordering field and/or direction and receives records sorted
 - **FR-002**: System MUST return all subscription history records when no pagination, filter, or ordering parameters are provided.
 - **FR-003**: System MUST support optional pagination via `page` and `pageSize` query parameters; when provided, only the corresponding page of records is returned.
 - **FR-004**: System MUST return pagination metadata alongside paginated results, including: current page, page size, total record count, and total page count.
-- **FR-005**: System MUST return each subscription history record with the following fields: timestamp, client name, account number, strategy name, equity connect amount, equity disconnect amount, and action type.
+- **FR-005**: System MUST return each subscription history record with the following fields: id, timestamp, client name, account number, strategy name, equity connect amount, equity disconnect amount, action type, and status.
 - **FR-006**: System MUST use mocked in-memory data instead of a real database table for the subscription history records.
 - **FR-007**: System MUST validate pagination parameters and return a 400 Bad Request response when `page` or `pageSize` values are zero or negative.
 - **FR-008**: System MUST return a consistent response envelope regardless of whether pagination is applied, differentiating paginated vs. non-paginated mode through the presence or absence of pagination metadata.
@@ -110,13 +160,15 @@ A client provides an ordering field and/or direction and receives records sorted
 - **FR-014**: System MUST apply ordering after filtering and before pagination slicing, so the page slice reflects the correctly ordered and filtered dataset.
 - **FR-015**: System MUST support Unicode characters in `clientName` and `strategyName` values in mocked data and response payloads.
 - **FR-016**: System MUST include mocked records that exercise long-string handling for `clientName` (100, 1,000, 10,000 characters) and `strategyName` (100, 1,000, 10,000, 100,000 characters).
+- **FR-017**: System MUST support an optional `statusFilter` query parameter that filters records by exact case-insensitive match on the `Status` field. Allowed status values: Active, Inactive, New, Pending, Approved, Terminated, Connecting, Withdraw. An empty or whitespace-only value is treated as no filter. Unrecognised values simply return no results (no 400 error).
+- **FR-018**: System MUST support optional `fromDate` and `toDate` query parameters that filter records by `Timestamp`: `fromDate` is inclusive lower bound, `toDate` is inclusive upper bound. Either parameter may be omitted independently. When both are provided and `fromDate > toDate`, the result is an empty list (no error).
 
 ### Key Entities
 
-- **SubscriptionHistoryRecord**: Represents a single subscription event. Key attributes: timestamp (date and time of event), client name (display name of the client), account number (numeric identifier), strategy name (name of the trading strategy), equity connect amount (monetary value at subscription), equity disconnect amount (monetary value at unsubscription, nullable), action type (Subscribe or Unsubscribe).
+- **SubscriptionHistoryRecord**: Represents a single subscription event. Key attributes: id (sequential integer identifier), timestamp (date and time of event), client name (display name of the client), account number (numeric identifier), strategy name (name of the trading strategy), equity connect amount (monetary value at subscription), equity disconnect amount (monetary value at unsubscription, nullable), action type (Subscribe or Unsubscribe), status (lifecycle state — one of: Active, Inactive, New, Pending, Approved, Terminated, Connecting, Withdraw).
 - **PaginationMetadata**: Describes the paging context of a response. Key attributes: current page number, page size, total record count, total page count.
 - **SubscriptionHistoryResponse**: The response envelope returned by the endpoint, containing the list of records and optional pagination metadata when pagination is requested.
-- **FilterCriteria**: The optional filtering input supplied by the caller. Key attribute: query string (partial match text).
+- **FilterCriteria**: The optional filtering inputs supplied by the caller. Key attributes: query string (partial match text), status filter (exact match), from date (inclusive lower bound), to date (inclusive upper bound).
 - **SortCriteria**: The optional ordering inputs supplied by the caller. Key attributes: order by field name, order direction (ascending or descending).
 
 ## Success Criteria *(mandatory)*
@@ -133,6 +185,8 @@ A client provides an ordering field and/or direction and receives records sorted
 - **SC-008**: Invalid ordering inputs (unrecognised `orderBy` field or `orderDirection` value) are rejected 100% of the time with a clear error message listing allowed values.
 - **SC-009**: Requests using long query inputs (100, 1,000, 10,000 characters) complete successfully without unhandled exceptions.
 - **SC-010**: Responses with multilingual and long-string mocked values preserve data integrity (no truncation or encoding corruption in API payloads).
+- **SC-011**: Status-filtered responses return only records whose `Status` equals the supplied value (case-insensitive), with a total count that reflects only matching records.
+- **SC-012**: Date-range-filtered responses return only records whose `Timestamp` falls within the supplied `fromDate`–`toDate` range (inclusive), with a total count reflecting only matching records.
 
 ## Assumptions
 
@@ -148,3 +202,7 @@ A client provides an ordering field and/or direction and receives records sorted
 - When `orderDirection` is provided without `orderBy`, the direction is applied to the default field (timestamp).
 - Processing order for each request: filter → sort → paginate.
 - Export functionality visible in the UI design is out of scope for this endpoint.
+- The `statusFilter` parameter performs a case-insensitive exact match against the `Status` field. Partial matching is not supported for status — it is always an exact, whole-value comparison.
+- An unrecognised `statusFilter` value returns an empty list rather than a 400 error; status values are not validated against an enumerated set at the API layer.
+- `fromDate` and `toDate` are compared against `Timestamp` using UTC semantics. When `fromDate > toDate`, the resulting intersection is empty (no error is returned).
+- The `Status` field in the mocked dataset uses a fixed set of display values sourced from the UI badge component: Active, Inactive, New, Pending, Approved, Terminated, Connecting, Withdraw.
