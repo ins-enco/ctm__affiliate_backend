@@ -8,7 +8,7 @@
 Expose a `GET /api/subscription-history` endpoint that returns a list of subscription history records (client subscribe/unsubscribe events for trading strategies). Data is served from an in-memory mocked dataset — no database tables or migrations required.
 
 The endpoint supports three orthogonal optional capabilities applied in this order: **filter → sort → paginate**:
-- **Filtering**: `query` (partial match on client name, account number, strategy name)
+- **Filtering**: `query` (partial match on client name, account number, strategy name), `statusFilter` (exact match on status), `fromDate` / `toDate` (inclusive timestamp range)
 - **Ordering**: `orderBy` (field name, default `timestamp`) + `orderDirection` (`asc` / `desc`, default `desc`)
 - **Pagination**: `page` + `pageSize` (omitting both returns all matching records)
 
@@ -26,7 +26,7 @@ A new `SubscriptionHistory` module (2 layers: API + Application) is added to the
 **Project Type**: web-service (modular monolith)  
 **Performance Goals**: ≤500ms p95 response time (SC-001)  
 **Constraints**: Async all the way (P5); ProblemDetails for all errors (P6); no secrets in source (P4); no `[Authorize]` this iteration  
-**Scale/Scope**: Single endpoint; 20 mocked records; no DB dependency
+**Scale/Scope**: Single endpoint; 100 mocked records; no DB dependency
 
 ## Constitution Check
 
@@ -102,9 +102,9 @@ Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.Application/
 - Project reference: `CopyTradeMarketApi.Shared` (required for `PagedResponse<T>`)
 
 Files to create:
-1. `DTOs/SubscriptionHistoryItem.cs` — record with 7 fields (see data-model.md)
-2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize, string? query, string? orderBy, string? orderDirection)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
-3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list; applies filter → sort → paginate and returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params. Includes deterministic generators for long English `clientName` and `strategyName` values (`BuildRandomEnglishName(length)`, `BuildRandomStrategyName(length)`).
+1. `DTOs/SubscriptionHistoryItem.cs` — record with 9 fields: `Id`, `Timestamp`, `ClientName`, `AccountNumber`, `StrategyName`, `EquityConnect`, `EquityDisconnect`, `ActionType`, `Status` (see data-model.md)
+2. `Services/ISubscriptionHistoryService.cs` — single method `Task<PagedResponse<SubscriptionHistoryItem>> GetAsync(int? page, int? pageSize, string? query, string? statusFilter, DateTime? fromDate, DateTime? toDate, string? orderBy, string? orderDirection)` (uses `PagedResponse<T>` from `CopyTradeMarketApi.Shared.Responses` — no custom response DTO needed)
+3. `Services/SubscriptionHistoryService.cs` — singleton service holding static mocked list (100 records); applies filter → sort → paginate and returns `PagedResponse<SubscriptionHistoryItem>.All()` or `.Paginated()` depending on params. Includes deterministic generators for long English `clientName` and `strategyName` values (`BuildRandomEnglishName(length)`, `BuildRandomStrategyName(length)`).
 4. `GlobalUsings.cs` — includes `global using CopyTradeMarketApi.Shared.Responses;`
 
 > **Note**: No `SubscriptionHistoryResponse.cs` is created — spec 003 provides `PagedResponse<T>` in `CopyTradeMarketApi.Shared` for this purpose.
@@ -117,7 +117,7 @@ Create `Backend/src/Modules/SubscriptionHistory/SubscriptionHistory.API/Subscrip
 - Project reference: `SubscriptionHistory.Application`
 
 Files to create:
-1. `Controllers/SubscriptionHistoryController.cs` — `GET /api/subscription-history` with optional `[FromQuery] int? page, int? pageSize, string? query, string? orderBy, string? orderDirection`
+1. `Controllers/SubscriptionHistoryController.cs` — `GET /api/subscription-history` with optional `[FromQuery] int? page, int? pageSize, string? query, string? statusFilter, DateTime? fromDate, DateTime? toDate, string? orderBy, string? orderDirection`
 2. `SubscriptionHistoryModule.cs` — implements `IModule`; registers `ISubscriptionHistoryService` as singleton and maps controller routes
 3. `GlobalUsings.cs`
 
@@ -142,6 +142,12 @@ Test cases in `SubscriptionHistoryServiceTests.cs`:
 - `GetAsync_WithZeroPage_ThrowsArgumentException` — invalid input guard
 - `GetAsync_WithQuery_FiltersByClientAccountOrStrategy` — query filter is case-insensitive and partial
 - `GetAsync_WithVeryLongQuery_DoesNotThrowAndReturnsEmptyWhenNoMatch` — validates long query lengths (100, 1,000, 10,000)
+- `GetAsync_WithStatusFilter_ReturnsOnlyMatchingStatus` — exact case-insensitive status match
+- `GetAsync_WithStatusFilter_UnknownStatus_ReturnsEmpty` — unrecognised status yields empty list
+- `GetAsync_WithFromDate_ReturnsRecordsOnOrAfter` — inclusive lower bound
+- `GetAsync_WithToDate_ReturnsRecordsOnOrBefore` — inclusive upper bound
+- `GetAsync_WithFromDateAndToDate_ReturnsRecordsInRange` — both bounds applied
+- `GetAsync_WithFromDateLaterThanToDate_ReturnsEmpty` — inverted range yields empty list
 - `GetAsync_WithOrderByClientName_DefaultsToDescending` — sorting by field works
 - `GetAsync_WithOrderDirectionOnly_AppliesToDefaultTimestamp` — direction-only request applies to default field
 - `GetAsync_WithInvalidOrderBy_ThrowsArgumentException` — invalid orderBy rejected
@@ -159,6 +165,8 @@ Add to existing `Backend/tests/Integration.Tests/SubscriptionHistory/Subscriptio
 - `GetSubscriptionHistory_WithOrderByAndDirection_ReturnsSortedRows`
 - `GetSubscriptionHistory_WithInvalidOrderBy_Returns400ProblemDetails`
 - `GetSubscriptionHistory_WithInvalidOrderDirection_Returns400ProblemDetails`
+- `GetSubscriptionHistory_WithStatusFilter_ReturnsOnlyMatchingStatus`
+- `GetSubscriptionHistory_WithFromDateAndToDate_ReturnsRecordsInRange`
 
 Ordering assertions should use the same comparer behavior as the service implementation to avoid locale-comparer mismatch in Unicode scenarios.
 
@@ -166,7 +174,7 @@ Ordering assertions should use the same comparer behavior as the service impleme
 
 - Ensure `SubscriptionHistory.API.csproj` and `SubscriptionHistory.Application.csproj` are added to `Backend/CopyTradeMarketApi.slnx`
 - Verify `GET /api/subscription-history` appears in Swagger UI after `dotnet run`
-- Verify Swagger lists all query parameters: `query`, `orderBy`, `orderDirection`, `page`, `pageSize`
+- Verify Swagger lists all query parameters: `query`, `statusFilter`, `fromDate`, `toDate`, `orderBy`, `orderDirection`, `page`, `pageSize`
 
 ## Complexity Tracking
 

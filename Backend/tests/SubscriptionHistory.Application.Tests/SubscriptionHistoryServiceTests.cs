@@ -11,8 +11,8 @@ public class SubscriptionHistoryServiceTests
     {
         var result = await _service.GetAsync(null, null);
 
-        Assert.Equal(20, result.Items.Count);
-        Assert.Equal(20, result.TotalCount);
+        Assert.Equal(100, result.Items.Count);
+        Assert.Equal(100, result.TotalCount);
         Assert.Null(result.Page);
         Assert.Null(result.PageSize);
         Assert.Null(result.TotalPages);
@@ -26,10 +26,10 @@ public class SubscriptionHistoryServiceTests
         var result = await _service.GetAsync(1, 5);
 
         Assert.Equal(5, result.Items.Count);
-        Assert.Equal(20, result.TotalCount);
+        Assert.Equal(100, result.TotalCount);
         Assert.Equal(1, result.Page);
         Assert.Equal(5, result.PageSize);
-        Assert.Equal(4, result.TotalPages);
+        Assert.Equal(20, result.TotalPages);
     }
 
     [Fact]
@@ -38,8 +38,8 @@ public class SubscriptionHistoryServiceTests
         var result = await _service.GetAsync(99, 10);
 
         Assert.Empty(result.Items);
-        Assert.Equal(20, result.TotalCount);
-        Assert.Equal(2, result.TotalPages);
+        Assert.Equal(100, result.TotalCount);
+        Assert.Equal(10, result.TotalPages);
     }
 
     [Fact]

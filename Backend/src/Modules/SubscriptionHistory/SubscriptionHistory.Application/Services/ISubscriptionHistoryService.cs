@@ -6,6 +6,9 @@ public interface ISubscriptionHistoryService
         int? page,
         int? pageSize,
         string? query = null,
+        string? statusFilter = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
         string? orderBy = null,
         string? orderDirection = null);
 }
